@@ -139,7 +139,7 @@
             干事
             <%# } %>
         </td>
-        <td><% item.studentinfo.mobilephone || "--" %></td>
+        <td><% item.studentInfo.mobilephone || "--" %></td>
         <td>
             <%# if(item.currentUserIdentity == 1&&item.associateInfo.identity!=3){ %>
             <a class="layui-btn layui-btn-mini layui-btn-normal" data-opt="updateIdentityToSir" data-id="<% item.associateInfo.id %>">任命部长</a>
@@ -407,10 +407,10 @@
                                         content:$("#memberDetail").html(),
                                         success:function () {
                                             $("form input[name=realname]").val(response.data.user.last_name);
-                                            $("form input[name=workid]").val(response.data.studentinfo.workid);
-                                            $("form input[name=mobilephone]").val(response.data.studentinfo.mobilephone);
-                                            $("form input[name=wechat]").val(response.data.studentinfo.wechat);
-                                            $("form input[name=qq]").val(response.data.studentinfo.qq);
+                                            $("form input[name=workid]").val(response.data.studentInfo.workid);
+                                            $("form input[name=mobilephone]").val(response.data.studentInfo.mobilephone);
+                                            $("form input[name=wechat]").val(response.data.studentInfo.wechat);
+                                            $("form input[name=qq]").val(response.data.studentInfo.qq);
                                             $("form input[name=email]").val(response.data.user.email);
                                             $("form input[name=school]").val(response.data.school.name);
                                             $("form input[name=clazz]").val(response.data.clazz.name);
@@ -467,15 +467,13 @@
 
                         $that.children("a[data-opt=updateIdentityToSir]").on('click',function () {
                             var assoid = $(this).data('id');
-                            console.log($(this).data('id'));
                             layer.confirm("确定吗?",function () {
                                   axios.post("/associateInfo/updateIdentityById/",{id:assoid,identity:3})
                                       .then(function (response) {
                                           console.log(response);
                                           if(response.data.success){
-                                              layer.msg("任命成功",{icon:1},function () {
-                                                  paging_member(organizedepartid);
-                                              });
+                                              layer.msg("任命成功",{icon:1});
+                                              paging_member(organizedepartid);
                                           }
                                           else{
                                               layer.msg("请重试",{icon:2});

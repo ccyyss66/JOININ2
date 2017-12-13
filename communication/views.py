@@ -13,6 +13,7 @@ from school.models import *
 def addOne(request):
     communication = json.loads(str(request.body, encoding="utf-8"))["communication"]
     communication.pop("csrfmiddlewaretoken")
+    communication.pop("fileUp")
     Communication.objects.create(**communication)
     return JsonResponse({"message": "添加成功", "success":True})
 
@@ -24,7 +25,6 @@ def findOneDetailById(request):
         communication = Communication.objects.get(id=id)
         if communication.activity!='' and communication.activity!=0 and communication.activity!=None:
             image = Image.objects.get(id=communication.activity)
-            image.path = settings.MEDIA_ROOT + image.path
             image = image.dict()
         else:
             image = None
@@ -113,6 +113,7 @@ def deleteById(request):
 @csrf_exempt
 def updateById(request):
     communication = json.loads(str(request.body, encoding="utf-8"))["communication"]
+    print(communication)
     communication.pop("csrfmiddlewaretoken")
     oldCommunication = Communication.objects.get(id=communication["id"])
     if oldCommunication.schoolid!=communication["schoolid"]:
@@ -123,7 +124,7 @@ def updateById(request):
         oldCommunication.start = communication["start"]
     if oldCommunication.end != communication["end"]:
         oldCommunication.end = communication["end"]
-    if communication["activity"]!=None and oldCommunication.activity != communication["activity"] and communication["activity"]!='':
+    if oldCommunication.activity != communication["activity"] and communication["activity"]!='':
         oldCommunication.activity = int(communication["activity"])
     if oldCommunication.qq != communication["qq"]:
         oldCommunication.qq = communication["qq"]

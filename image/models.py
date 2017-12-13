@@ -11,6 +11,7 @@ class Image(models.Model):
 
     def dict(self):
         image = {
+            "id":self.id,
             "path":self.path,
             "description":self.description,
             "name":self.name

@@ -35,13 +35,12 @@ def upload(request):
     file = imag.open(file).convert('RGB')
     file.save(path)
     Img = Image()
-    Img.path = 'upload/'+filename
+    Img.path = filename
     Img.description = '活动图片'
     Img.name = '活动地点图片'
     # Img.save()
     img = Image.objects.get_or_create(path=Img.path,description=Img.description,name=Img.name)
     if img[1]:
-        img[0].path = settings.MEDIA_ROOT+img[0].path  #返回绝对路径
         return JsonResponse({"success": True, "message": "上传图片成功", "data": img[0].dict()})
     else:
         return JsonResponse({"success":False, "message":"上传失败，请重试"})

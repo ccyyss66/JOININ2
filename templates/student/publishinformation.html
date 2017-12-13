@@ -138,9 +138,10 @@
 <script>
     layui.config({
         base:"{% static 'js/layuiModulesEX/' %}"
-    }).use(['form','paging','layer'],function () {
+    }).use(['form','paging','layer','upload'],function () {
         var form = layui.form,
             layer = layui.layer,
+            upload = layui.upload,
             laytpl = layui.laytpl,
             paging = layui.paging(),
             $ = layui.$;
@@ -166,9 +167,29 @@
                             area: ['800px', '90%'],
                             content: html
                             ,success:function (layero, index) {
+                                var static = '{% static "media/upload/" %}';
+                                var image = {};
+                                upload.render({
+                                    url:"/image/upload/",
+                                    field:"fileUp",
+                                    elem:"#activity",
+                                    done:function (response) {
+                                        image = response.data;
+                                        $("#showActivity").attr('src',static+image.path);
+                                    },
+                                    before:function () {
+                                        console.log("图片上传中");
+                                    },
+                                    error:function (msg) {
+                                        console.log(msg);
+                                    }
+                                });
                                 form.on('submit(submit)',function (data) {
                                     data.field.userid = userid;
                                     data.field.state = 2;
+                                    if(image!=null){
+                                        data.field.activity = image.id;
+                                    }
                                     console.log(data.field);
                                     axios.post("/communication/addOne/",{"communication":data.field})
                                         .then(function (res) {
@@ -186,6 +207,9 @@
                                 form.on('submit(saveTemporary)',function (data) {
                                     data.field.userid = userid;
                                     data.field.state = 1;
+                                    if(image!=null){
+                                        data.field.activity = image.id;
+                                    }
                                     console.log(data.field);
                                     axios.post("/communication/addOne/",{"communication":data.field})
                                         .then(function (res) {
@@ -250,11 +274,31 @@
                                 area: ['800px', '90%'],
                                 content: html
                                 ,success:function (layero, index) {
+                                    var static = '{% static "media/upload/" %}';
+                                    var image = null;
+                                    upload.render({
+                                        url:"/image/upload/",
+                                        field:"fileUp",
+                                        elem:"#activity",
+                                        done:function (response) {
+                                            image = response.data;
+                                            $("#showActivity").attr('src',static+image.path);
+                                        },
+                                        before:function () {
+                                            console.log("图片上传中");
+                                        },
+                                        error:function (msg) {
+                                            console.log(msg);
+                                        }
+                                    });
                                     form.on('submit(sub)',function (data) {
                                         data.field.userid = userid;
                                         data.field.state = 2;
                                         data.field.id = id;
-                                        data.field.activity = '';
+                                        data.field.activity = "";
+                                        if(image!=null){
+                                            data.field.activity = image.id;
+                                        }
                                         console.log(data.field);
                                         axios.post("/communication/updateById/",{"communication":data.field})
                                             .then(function (res) {
@@ -274,6 +318,9 @@
                                         data.field.state = 1;
                                         data.field.id = id;
                                         data.field.activity = '';
+                                        if(image!=null){
+                                            data.field.activity = image.id;
+                                        }
                                         console.log(data.field);
                                         axios.post("/communication/updateById/",{"communication":data.field})
                                             .then(function (res) {
@@ -320,7 +367,7 @@
                                             $("form input[name=qq]").val(communication.qq);
                                             $("form input[name=wechat]").val(communication.wechat);
                                             if(image!==null){
-                                                $("#picture").attr("src",image.path);
+                                                $("#picture").attr("src",'{% static "media/upload/" %}'+image.path);
                                             }
                                             else{
                                                 $("#picture").attr("src","");

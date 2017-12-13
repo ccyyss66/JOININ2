@@ -41,7 +41,7 @@
     <%# if(item.communication.state !=1 && item.communication.state !=4) { %>
     <tr>
         <td><% item.communication.topic||"--" %></td>
-        <td><% item.publisher.realname||"--" %></td>
+        <td><% item.publisher.last_name||"--" %></td>
         <td><% item.communication.start||"--" %></td>
         <td><% item.communication.end||"--" %></td>
         <td>
@@ -64,11 +64,11 @@
             <div class="layui-form-item">
                 <label class="layui-form-label">发布者姓名</label>
                 <div class="layui-input-inline">
-                    <input class="layui-input" type="text" name="name" autocomplete="off" readonly/>
+                    <input class="layui-input" type="text" name="last_name" autocomplete="off" readonly/>
                 </div>
-                <label class="layui-form-label">发布者电话</label>
+                <label class="layui-form-label">发布者邮箱</label>
                 <div class="layui-input-inline">
-                    <input class="layui-input" type="text" name="publisherphone" autocomplete="off" readonly>
+                    <input class="layui-input" type="text" name="publisheremail" autocomplete="off" readonly>
                 </div>
             </div>
             <div class="layui-form-item">
@@ -118,7 +118,7 @@
             <div class="layui-form-item">
                 <label class="layui-form-label">活动场地</label>
                 <div class="layui-input-block">
-                    <img id="picture" style="height: 100px;width: 100px"/>
+                    <img id="picture" style="height: 100px;width: 100px;overflow:hidden"/>
                 </div>
             </div>
             <div class="layui-form-item" id="check" style="float: right">
@@ -134,7 +134,6 @@
 </script>
 <script type="text/javascript" src={% static "common/vue.min.js" %}></script>
 <script type="text/javascript" src={% static "common/layui/layui.js" %}></script>
-{#<script type="text/javascript" src={% static "common/jquery/jquery-1.11.1.min.js" %}></script>#}
 <script>
     var userid = {{ session_userId }};
     layui.config({
@@ -188,15 +187,14 @@
                                 var school = response.data.school;
                                 var image = response.data.image;
                                 var publisher = response.data.publisher;
-                                console.log(publisher);
                                 if (response.data.success) {
                                     layer.open({
                                         type: 1,
                                         content: $("#detailTpl").html(),
                                         area: ["700px", "80%"],
                                         success: function (layero, index) {
-                                            $("form input[name=name]").val(publisher.realname);
-                                            $("form input[name=publisherphone]").val(publisher.mobilephone);
+                                            $("form input[name=last_name]").val(publisher.last_name);
+                                            $("form input[name=publisheremail]").val(publisher.email);
                                             $("form input[name=topic]").val(communication.topic);
                                             $("form input[name=school]").val(school.name);
                                             $("form textarea[name=content]").html(communication.content);
@@ -207,7 +205,7 @@
                                             $("form input[name=wechat]").val(communication.wechat);
                                             $('#check').hide();
                                             if (image !== null) {
-                                                $("#picture").attr("src", image.path);
+                                                $("#picture").attr("src", '{% static "media/upload/" %}'+image.path);
                                             }
                                             else {
                                                 $("#picture").attr("src", "");
@@ -232,10 +230,8 @@
                     });
 
                     $that.find("a[data-opt=verify]").on('click', function () {
-                        console.log("审核");
                         axios.post("/communication/findOneDetailById/", {"id": verify_id})
                             .then(function (response) {
-                                {#                                console.log(response.data);#}
                                 var communication = response.data.communication;
                                 var school = response.data.school;
                                 var image = response.data.image;
@@ -246,8 +242,8 @@
                                         content: $("#detailTpl").html(),
                                         area: ["700px", "80%"],
                                         success: function (layero, index) {
-                                            $("form input[name=name]").val(publisher.realname);
-                                            $("form input[name=publisherphone]").val(publisher.mobilephone);
+                                            $("form input[name=last_name]").val(publisher.last_name);
+                                            $("form input[name=publisheremail]").val(publisher.email);
                                             $("form input[name=topic]").val(communication.topic);
                                             $("form input[name=school]").val(school.name);
                                             $("form textarea[name=content]").html(communication.content);
@@ -257,7 +253,7 @@
                                             $("form input[name=qq]").val(communication.qq);
                                             $("form input[name=wechat]").val(communication.wechat);
                                             if (image !== null) {
-                                                $("#picture").attr("src", image.path);
+                                                $("#picture").attr("src", '{% static "media/upload/" %}'+image.path);
                                             }
                                             else {
                                                 $("#picture").attr("src", "");

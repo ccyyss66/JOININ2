@@ -109,7 +109,7 @@
         <div class="layui-form-item">
             <label class="layui-form-label">活动场地</label>
             <div class="layui-input-block">
-                <img id="workpic" style="height: 100px;width: 100px">
+                <img id="workpic" style="height: 100px;width: 100px" src={% static "media/upload/" %}<%item.image.path%>
             </div>
         </div>
     </div>
@@ -167,14 +167,11 @@
                                     type: 1,
                                     title: "查看信息",
                                     content: laytpl($('#detailTpl').html()).render(information),
-                                    shade: [0.5, '#FFF'], //模态框
                                     area: ['85%', '85%'],
-                                    zIndex: 19950924,
                                     btn: ['返回'],
                                     yes: function (index) {
                                         layer.close(index);
                                     }, success: function (index) {
-
                                     }
                                 });
                             })

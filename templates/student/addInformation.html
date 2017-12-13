@@ -1,3 +1,4 @@
+{% load staticfiles %}
 <div class="admin-main">
     <fieldset class="layui-elem-field">
         <legend>发布信息</legend>
@@ -56,7 +57,7 @@
                     <button type="button" name="activity" id="activity" class="layui-btn">
                         <i class="layui-icon">&#xe67c;</i>上传图片
                     </button>
-                    <img id="workpic" style="height: 100px;width: 100px">
+                    <img id="showActivity" style="height: 100px;width: 100px;overflow: hidden">
                 </div>
                 </div>
                 <div class="layui-form-item">
@@ -74,8 +75,10 @@
     var communication_id = {{ communication_id }};
     var communication = {};
     if(communication_id) {
+        var static = '{% static "upload/" %}'
         axios.post('/communication/findOneDetailById/', {"id": communication_id})
             .then(function (response) {
+                console.log(response.data);
                 communication = response.data.communication;
                 var image = response.data.image;
                 $("form input[name=topic]").val(communication.topic);
@@ -85,11 +88,12 @@
                 $("form input[name=phone]").val(communication.phone);
                 $("form input[name=qq]").val(communication.qq);
                 $("form input[name=wechat]").val(communication.wechat);
-                if(image!==null){
-                    $("#workpic").attr("src",image.path);
+                if(image!=null){
+                    console.log(image);
+                    $("#showActivity").attr("src",'{% static "media/upload/" %}'+image.path);
                 }
                 else{
-                    $("#workpic").attr("src",null);
+                    $("#showActivity").attr("src",null);
                 }
             })
             .catch(function (msg) {
