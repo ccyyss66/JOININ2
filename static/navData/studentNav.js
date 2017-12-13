@@ -1,0 +1,22 @@
+var navs = [{
+    "title":"个人信息",
+    "icon":"fa-address-book",
+    "spread":false,
+    "href":"/student/personalInfo"
+},{
+    "title":"发布信息",
+    "icon":"fa-address-book",
+    "spread":false,
+    "href":"/student/publishinformation"
+},{
+    "title":"查看信息",
+    "icon":"fa-address-book",
+    "spread":false,
+    "href":"/student/viewinformation"
+},{
+    "title":"社团管理",
+    "icon":"fa-address-book",
+    "spread":false,
+    "href":"/student/associateInfo"
+}
+];

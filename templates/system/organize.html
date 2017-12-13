@@ -1,0 +1,615 @@
+{% load staticfiles %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>组织管理</title>
+    <link rel="stylesheet" href={% static "common/layui/css/layui.css" %}/>
+    <link rel="stylesheet" href={% static "common/global.css" %}>
+    <script type="text/javascript" src={% static "common/axios.min.js" %}></script>
+</head>
+<body>
+<div class="admin-main" id="Vue">
+    <div v-show="show">
+        <blockquote class="layui-elem-quote">
+            <button type="button" class="layui-btn layui-btn-small" onclick="window.location.reload()">刷新</button>
+            <button type="button" class="layui-btn layui-btn-small layui-btn-normal" @click="addOrganize">新增</button>
+        </blockquote>
+        <fieldset class="layui-elem-field">
+            <legend>组织信息</legend>
+            <form class="layui-field-box layui-form">
+            {% csrf_token %}
+                <table class="layui-table admin-table">
+                    <thead>
+                    <tr>
+                        <th>名称</th>
+                        <th>主席/会长</th>
+                        <th>操作</th>
+                    </tr>
+                    </thead>
+                    <tbody id="content">
+                    </tbody>
+                </table>
+            </form>
+        </fieldset>
+        <div class="admin-table-page">
+            <div id="paged" class="page"></div>
+        </div>
+    </div>
+
+    <div v-show="show_depart" style="display: none">
+        <blockquote class="layui-elem-quote">
+            <button type="button" class="layui-btn layui-btn-small" @click="reloadToOrganize">返回</button>
+            <button type="button" class="layui-btn layui-btn-small layui-btn-normal" @click="addDepart">新增</button>
+        </blockquote>
+        <fieldset class="layui-elem-field">
+            <legend>部门信息</legend>
+            <form class="layui-field-box layui-form">
+            {% csrf_token %}
+                <table class="layui-table admin-table">
+                    <thead>
+                    <tr>
+                        <th>名称</th>
+{#                        <th>身份</th>#}
+{#                        <th>联系方式</th>#}
+                        <th>操作</th>
+                    </tr>
+                    </thead>
+                    <tbody id="content_depart">
+                    </tbody>
+                </table>
+            </form>
+        </fieldset>
+        <div class="admin-table-page">
+            <div id="paged_depart" class="page"></div>
+        </div>
+    </div>
+
+    <div v-show="show_member" style="display: none">
+        <blockquote class="layui-elem-quote">
+            <button type="button" class="layui-btn layui-btn-small" @click="reloadToDepart">返回</button>
+        </blockquote>
+        <fieldset class="layui-elem-field">
+            <legend>成员信息</legend>
+            <form class="layui-field-box layui-form">
+            {% csrf_token %}
+                <table class="layui-table admin-table">
+                    <thead>
+                    <tr>
+                        <th>姓名</th>
+                        <th>身份</th>
+                        <th>联系方式</th>
+                        <th>操作</th>
+                    </tr>
+                    </thead>
+                    <tbody id="content_member">
+                    </tbody>
+                </table>
+            </form>
+        </fieldset>
+        <div class="admin-table-page">
+            <div id="paged_member" class="page"></div>
+        </div>
+    </div>
+</div>
+<script type="text/html" id="tpl">
+    <%# layui.each(d.data,function(index,item){ %>
+    <tr>
+        <td><% item.organize.name || "--" %></td>
+        <td>
+            <a href="javascript:;" style="text-decoration:underline" data-opt="chairman" data-id="<% item.chairmanUser.id %>"><% item.chairmanUser.last_name || "--" %></a>
+            <%# if(item.chairmanUser){ %>
+            <a class="layui-btn layui-btn-mini layui-btn-danger" data-opt="changeChairman" data-id="<% item.organize.id %>">指定主席</a>
+            <%# } %>
+            <%# if(!item.chairmanUser){ %>
+            <a class="layui-btn layui-btn-mini layui-btn-danger" data-opt="createChairman" data-id="<% item.organize.id %>">新添主席</a>
+            <%# } %>
+        </td>
+        <td>
+            <a class="layui-btn layui-btn-mini" data-opt="detail" data-id="<% item.organize.id %>">组织介绍</a>
+            <a class="layui-btn layui-btn-mini" data-opt="viewDeparts">查看部门</a>
+        </td>
+    </tr>
+    <%# }); %>
+</script>
+<script type="text/html" id="member_tpl">
+    <%# layui.each(d.data,function(index,item){ %>
+    <tr>
+        <td><% item.user.last_name || "--" %></td>
+        <td>
+            <%# if(item.associateInfo.identity==null){ %>
+            N/A
+            <%# } %>
+            <%# if(item.associateInfo.identity==1){ %>
+            主席/会长
+            <%# } %>
+            <%# if(item.associateInfo.identity==2){ %>
+            副主席/主任
+            <%# } %>
+            <%# if(item.associateInfo.identity==3){ %>
+            部长
+            <%# } %>
+            <%# if(item.associateInfo.identity==4){ %>
+            干事
+            <%# } %>
+        </td>
+        <td><% item.studentInfo.mobilephone || "--" %></td>
+        <td>
+            <a class="layui-btn layui-btn-mini" data-opt="detail" data-id="<% item.user.id %>">查看详情</a>
+        </td>
+    </tr>
+    <%# }); %>
+</script>
+<script type="text/html" id="depart_tpl">
+    <%# layui.each(d.data,function(index,item){ %>
+    <tr>
+        <td><% item.organizeDepart.name || "--" %></td>
+        <td>
+            <a class="layui-btn layui-btn-mini" data-opt="viewMembers" data-id="<% item.organizeDepart.id %>">查看成员</a>
+{#            <a class="layui-btn layui-btn-mini" data-opt="viewDeparts">查看部门</a>#}
+        </td>
+    </tr>
+    <%# }); %>
+</script>
+<script type="text/html" id="addOrganizeOrDepartTpl">
+<div class="admin-main">
+    <div id="school">
+        <fieldset class="layui-elem-field">
+            <legend>新增组织/部门</legend>
+            <div class="layui-field-box">
+                <form class="layui-form">
+                    {% csrf_token %}
+                    <div class="layui-form-item">
+                        <div class="layui-inline">
+                            <label class="layui-form-label">名称：</label>
+                            <div class="layui-input-inline">
+                                <input name="name" placeholder="请输入名称" class="layui-input" autocomplete="off">
+                            </div>
+                            <button lay-filter="create" class="layui-btn" lay-submit>创建</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </fieldset>
+    </div>
+</div>
+</script>
+<script type="text/html" id="memberDetail">
+<form class="layui-form">
+    <div class="layui-form-item">
+        <label class="layui-form-label">姓名</label>
+        <div class="layui-input-inline">
+            <input class="layui-input" name="realname" readonly>
+        </div>
+        <label class="layui-form-label">学号</label>
+        <div class="layui-input-inline">
+            <input class="layui-input" name="workid" readonly>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">手机</label>
+        <div class="layui-input-inline">
+            <input class="layui-input" name="mobilephone" readonly>
+        </div>
+        <label class="layui-form-label">微信</label>
+        <div class="layui-input-inline">
+            <input class="layui-input" name="wechat" readonly>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">QQ</label>
+        <div class="layui-input-inline">
+            <input class="layui-input" name="qq" readonly>
+        </div>
+        <label class="layui-form-label">邮箱</label>
+        <div class="layui-input-inline">
+            <input class="layui-input" name="email" readonly>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">学院</label>
+        <div class="layui-input-inline">
+            <input class="layui-input" name="school" readonly>
+        </div>
+        <label class="layui-form-label">班级</label>
+        <div class="layui-input-inline">
+            <input class="layui-input" name="clazz" readonly>
+        </div>
+    </div>
+</form>
+</script>
+<script type="text/html" id="changeChairman">
+<div class="layui-form" style="margin-top: 15px">
+    <div class="layui-form-item">
+        <label class="layui-form-label">人选:</label>
+        <div class="layui-input-inline">
+            <select name="chairmanSelect" class="layui-input" id="selectChairman">
+                <option value="">请从以下人选中选择</option>
+            </select>
+        </div>
+        <button class="layui-btn" lay-filter="save" lay-submit>完成</button>
+    </div>
+</div>
+</script>
+<script type="text/html" id="createChairman">
+<div class="layui-form" style="margin-top: 15px">
+    <div class="layui-form-item">
+        <label class="layui-form-label">用户名:</label>
+        <div class="layui-input-inline">
+            <input class="layui-input" autocomplete="请输入用户名" name="username">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">密码:</label>
+        <div class="layui-input-inline">
+            <input type="password" class="layui-input" autocomplete="请输入密码" name="password">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">姓名:</label>
+        <div class="layui-input-inline">
+            <input class="layui-input" autocomplete="请输入姓名" name="last_name">
+        </div>
+    </div>
+    <label class="layui-form-label"></label>
+    <div class="layui-form-mid" style="color: red">剩余信息请由账号所有者填充完整</div>
+    <div class="layui-form-item">
+        <div class="layui-input-block">
+            <button class="layui-btn" lay-filter="create" lay-submit>完成</button>
+        </div>
+    </div>
+</div>
+</script>
+<script type="text/javascript" src={% static "common/vue.min.js" %}></script>
+<script type="text/javascript" src={% static "common/layui/layui.js" %}></script>
+<script type="text/javascript" src={% static "js/jquery-3.2.1.js" %}></script>
+<script>
+    layui.config({
+        base:"{% static 'js/layuiModulesEX/' %}"
+    }).use(['form','paging','layer','laytpl'],function () {
+        var form = layui.form,
+            layer = layui.layer,
+            laytpl = layui.laytpl,
+            paging = layui.paging(),
+            $ = layui.$;
+        laytpl.config({
+            open: '<%',
+            close: '%>'
+        });
+
+        var vm = new Vue({
+            el:"#Vue",
+            data:{
+                show:true,
+                show_depart:false,
+                show_member:false,
+                currentOrganizeid:""
+            },
+            methods: {
+                addOrganize: function () {
+                    var addBoxIndex = -1;
+                    if (addBoxIndex !== -1) //说明
+                        return
+                    addBoxIndex = layer.open({
+                        type: 1,
+                        title: '新增组织',
+                        // offset: ['100px', '20%'],
+                        area: ['55%', '30%'],
+                        content:$("#addOrganizeOrDepartTpl").html()
+                        , success: function (layero, index) {
+                            //创建学院监听
+                            form.on('submit(create)', function (data) {
+                                    console.log(data);
+                                var organize = {
+                                    name:data.field.name,
+                                    universityid:1,
+                                    schoolid:-1,
+                                    introduce:"",
+                                    type:null
+                                };
+                                axios.post("/organize/addOne/",{"organize":organize})
+                                    .then(function (response) {
+                                            console.log(response);
+                                        if(response.data.success){
+                                            layer.msg(response.data.message,{icon:1});
+                                            layer.close(index);
+                                            paging.init();
+                                        }
+                                        else{
+                                            layer.msg(response.data.message);
+                                        }
+                                    })
+                                    .catch(function (msg) {
+                                        console.log(msg);
+                                    });
+                                return false; //阻止表单跳转。如果需要表单跳转，去掉这段即可。
+                            });
+                            return false; //阻止表单跳转。如果需要表单跳转，去掉这段即可。
+                        }
+                        , end: function () {
+                            addBoxIndex = -1;
+                        }
+                    });
+                },
+                reloadToDepart:function () {
+                    vm.show_member = false;
+                    vm.show = false;
+                    vm.show_depart=true;
+                },
+                reloadToOrganize:function () {
+                    vm.show_member = false;
+                    vm.show = true;
+                    vm.show_depart=false;
+                },
+                addDepart:function () {
+                    var addBoxIndex = -1;
+                    if (addBoxIndex !== -1) //说明
+                        return
+                    addBoxIndex = layer.open({
+                        type: 1,
+                        title: '新增部门',
+                        // offset: ['100px', '20%'],
+                        area: ['55%', '30%'],
+                        content:$("#addOrganizeOrDepartTpl").html()
+                        , success: function (layero, index) {
+                            //创建监听
+                            form.on('submit(create)', function (data) {
+                                var organizeDepart = {
+                                    name:data.field.name,
+                                    organizeid:vm.currentOrganizeid
+                                };
+                                axios.post("/organizeDepart/addOne/",{"organizeDepart":organizeDepart})
+                                    .then(function (response) {
+                                        if(response.data.success){
+                                            layer.msg(response.data.message,{icon:1});
+                                            layer.close(index);
+                                            paging_depart(vm.currentOrganizeid);
+                                        }
+                                        else{
+                                            layer.msg(response.data.message);
+                                        }
+                                    })
+                                    .catch(function (msg) {
+                                        console.log(msg);
+                                    });
+                                return false; //阻止表单跳转。如果需要表单跳转，去掉这段即可。
+                            });
+                            return false; //阻止表单跳转。如果需要表单跳转，去掉这段即可。
+                        }
+                        , end: function () {
+                            addBoxIndex = -1;
+                        }
+                    });
+                }
+            }
+        });
+
+        paging.init({
+            url:"/organize/findByCondition/",
+            elem:"#content",
+            params:{
+                schoolid:-1,
+                universityid:1
+            },
+            contentType : "application/json; charset=utf-8",
+            type: 'POST',
+            tempElem: '#tpl', //模块容器
+            pageConfig: { //分页参数配置
+                elem: 'paged', //分页容器
+                pageSize:10 //分页大小
+            },
+            success:function () {
+//                alert('渲染成功');
+            },
+            fail:function (msg) {
+//                alert('获取数据失败');
+            },
+            complate:function () {
+//                alert("处理完成");
+                $("#content").children('tr').each(function () {
+                    var $that = $(this).children('td:last-child');
+                    var organizeid = $that.children('a[data-opt=detail]').data('id');
+                    var $chairman = $(this).children("td:nth-child(2)");
+
+                    $chairman.children("a[data-opt=chairman]").on('click',function () {
+                         viewStudentDetail($(this).data('id'));
+                    });
+                    $chairman.children("a[data-opt=changeChairman]").on('click',function () {
+                        console.log("指定主席");
+                        axios.post("/associateInfo/findMemberByIdentityForChangeChairman/",{organizeid:$(this).data('id'),identity:3})
+                            .then(function (response) {
+                                console.log(response);
+                                var array = response.data.data;
+                                var html = '';
+                                for(var i in array){
+                                    html += "<option value="+array[i].associateInfo.id+">"+array[i].user.realname+"("+array[i].depart.name+")"+"</option>"
+                                }
+                                console.log(html);
+                                layer.open({
+                                    type:1,
+                                    title:"指定leader",
+                                    area:["450px","200px"],
+                                    content:$("#changeChairman").html(),
+                                    success:function () {
+                                        $("#selectChairman").append(html);
+                                        form.render('select');
+                                        form.on("submit(save)",function (data) {
+                                            console.log(data.field);
+                                            return false;
+                                        });
+                                    }
+                                })
+                            })
+                            .catch(function (msg) {
+                                console.log(msg);
+                            });
+                    });
+
+                    $chairman.children('a[data-opt=createChairman]').on('click',function () {
+                        layer.open({
+                            type:1,
+                            area:['400px','350px'],
+                            content:$("#createChairman").html(),
+                            success:function (index) {
+                                form.on("submit(create)",function (data) {
+                                    console.log(data);
+                                    var newUser={
+                                        last_name:data.field.last_name,
+                                        username:data.field.username,
+                                        is_staff:0,
+                                        password:data.field.password
+                                    };
+                                    var associateInfo = {
+                                        organizeid:organizeid
+                                    };
+                                    axios.post("/user/addOneChairman/",{newUser:newUser,associateInfo:associateInfo})
+                                        .then(function (response) {
+                                            console.log(response);
+                                            if(response.data.success){
+                                                layer.msg(response.data.message,{icon:1});
+                                                layer.close(index);
+                                                paging.init();
+                                            }
+                                            else{
+                                                layer.msg(response.data.message);
+                                            }
+                                        })
+                                        .catch(function (msg) {
+                                            console.log(msg);
+                                        })
+                                });
+                            }
+                        });
+                    });
+
+                    $that.children('a[data-opt=detail]').on('click',function () {
+                        axios.post("/organize/findOneById/",{id:organizeid})
+                            .then(function (response) {
+                                console.log(response);
+                                layer.open({
+                                    type: 1
+                                    ,title: "介绍" //不显示标题栏
+                                    ,area: '300px;'
+                                    ,shade: 0.8
+                                    ,btn: ['返回']
+                                    ,moveType: 1 //拖拽模式，0或者1
+                                    ,content: response.data.organize.introduce
+                                    ,success: function(layero){
+                                    }
+                                });
+                            })
+                            .catch(function (msg) {
+                                console.log(msg);
+                            });
+                    });
+
+                    $that.children('a[data-opt=viewDeparts]').on('click',function () {
+                        vm.currentOrganizeid = organizeid;
+                        paging_depart(organizeid);
+                        vm.show = false;
+                        vm.show_member = false;
+                        vm.show_depart = true;
+                    });
+                });
+            }
+        });
+
+        var paging_member = function (organizedepartid) {
+            paging.init({
+                url:"/associateInfo/findMembersByOrganizeDepartid/",
+                elem:"#content_member",
+                params:{
+                    organizeDepartid:organizedepartid,
+                    state:2
+                },
+                contentType : "application/json; charset=utf-8",
+                type: 'POST',
+                tempElem: '#member_tpl', //模块容器
+                pageConfig: { //分页参数配置
+                    elem: 'paged_member', //分页容器
+                    pageSize:10 //分页大小
+                },
+                success:function () {
+    //                alert('渲染成功');
+                },
+                fail:function (msg) {
+    //                alert('获取数据失败');
+                },
+                complate:function () {
+    //                alert("处理完成");
+                    $("#content_member").children('tr').each(function () {
+                        var $that = $(this).children("td:last-child");
+                        $that.children("a[data-opt=detail]").on('click',function () {
+                             viewStudentDetail($(this).data('id'));
+                        });
+                    });
+                }
+            });
+        };
+        var paging_depart = function (organizeid) {
+            paging.init({
+                url:"/organizeDepart/findByOrganizeid/",
+                elem:"#content_depart",
+                params:{
+                    organizeid:organizeid
+                },
+                contentType : "application/json; charset=utf-8",
+                type: 'POST',
+                tempElem: '#depart_tpl', //模块容器
+                pageConfig: { //分页参数配置
+                    elem: 'paged_depart', //分页容器
+                    pageSize:10 //分页大小
+                },
+                success:function () {
+    //                alert('渲染成功');
+                },
+                fail:function (msg) {
+    //                alert('获取数据失败');
+                },
+                complate:function () {
+    //                alert("处理完成");
+                    $("#content_depart").children('tr').each(function () {
+                        var $that = $(this).children('td:last-child');
+                        var departid = $that.children('a[data-opt=viewMembers]').data('id');
+
+                        $that.children('a[data-opt=viewMembers]').on('click',function () {
+                            console.log(departid);
+                            paging_member(departid);
+                            vm.show = false;
+                            vm.show_depart = false;
+                            vm.show_member = true;
+                        });
+                    });
+                }
+            });
+        };
+
+        var viewStudentDetail = function (userid) {
+            axios.post("/student/findStudentInfoDetail/",{userId:userid})
+                .then(function (response) {
+                    console.log(response);
+                    layer.open({
+                        type:1,
+                        area:["700px","300px"],
+                        content:$("#memberDetail").html(),
+                        success:function () {
+                            $("form input[name=realname]").val(response.data.user.last_name);
+                            $("form input[name=workid]").val(response.data.studentInfo.workid);
+                            $("form input[name=mobilephone]").val(response.data.studentInfo.mobilephone);
+                            $("form input[name=wechat]").val(response.data.studentInfo.wechat);
+                            $("form input[name=qq]").val(response.data.studentInfo.qq);
+                            $("form input[name=email]").val(response.data.user.email);
+                            $("form input[name=school]").val(response.data.school.name);
+                            $("form input[name=clazz]").val(response.data.clazz.name);
+                        },
+                        end:function (index) {}
+                    });
+                })
+                .catch(function (msg) {
+                    console.log(msg);
+                });
+        };
+    });
+</script>
+</body>
+</html>

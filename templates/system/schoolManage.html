@@ -1,0 +1,221 @@
+{% load staticfiles %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>院管理</title>
+    <link rel="stylesheet" href={% static "common/layui/css/layui.css" %}/>
+    <link rel="stylesheet" href={% static "common/global.css" %}>
+    <script type="text/javascript" src={% static "common/axios.min.js" %}></script>
+</head>
+<body>
+<div class="admin-main" id="Vue">
+    <blockquote class="layui-elem-quote">
+        <button type="button" class="layui-btn layui-btn-small" onclick="window.location.reload()">刷新</button>
+        <button type="button" class="layui-btn layui-btn-small layui-btn-normal" @click="addSchool">新增</button>
+    </blockquote>
+    <fieldset class="layui-elem-field">
+        <legend>学院信息</legend>
+        <form class="layui-field-box layui-form">
+        {% csrf_token %}
+            <table class="layui-table admin-table">
+                <thead>
+                <tr>
+                    <th>学院</th>
+                    <th>管理员</th>
+                    <th>操作</th>
+                </tr>
+                </thead>
+                <tbody id="content">
+                </tbody>
+            </table>
+        </form>
+    </fieldset>
+    <div class="admin-table-page">
+        <div id="paged" class="page"></div>
+    </div>
+</div>
+<script type="text/html" id="tpl">
+    <%# layui.each(d.data,function(index,item){ %>
+    <%# console.log(item); %>
+    <tr>
+        <td><% item.school.name || "--" %></td>
+        <td>
+            <% item.user.last_name || "--" %>
+            <%# if(!item.user){ %>
+            <a class="layui-btn layui-btn-mini layui-btn-danger" data-opt="addSchoolAdmin" data-id="<%item.school.id%>">添加管理员</a>
+            <%# } %>
+        </td>
+        <td>
+            <a class="layui-btn layui-btn-mini">没啥</a>
+        </td>
+    </tr>
+    <%# }); %>
+</script>
+<script type="text/html" id="addSchoolAdminTpl">
+<div class="layui-form" style="margin-top: 15px">
+    <div class="layui-form-item">
+        <label class="layui-form-label">用户名:</label>
+        <div class="layui-input-inline">
+            <input class="layui-input" autocomplete="请输入用户名" name="username">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">密码:</label>
+        <div class="layui-input-inline">
+            <input type="password" class="layui-input" autocomplete="请输入密码" name="password">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">姓名:</label>
+        <div class="layui-input-inline">
+            <input class="layui-input" autocomplete="请输入姓名" name="last_name">
+        </div>
+    </div>
+    <label class="layui-form-label"></label>
+    <div class="layui-form-mid" style="color: red">剩余信息请由账号所有者填充完整</div>
+    <div class="layui-form-item">
+        <div class="layui-input-block">
+            <button class="layui-btn" lay-filter="create" lay-submit>完成</button>
+        </div>
+    </div>
+</div>
+</script>
+<script>
+    var userid={{ session_userId }};
+</script>
+<script type="text/javascript" src={% static "common/vue.min.js" %}></script>
+<script type="text/javascript" src={% static "common/layui/layui.js" %}></script>
+<script type="text/javascript" src={% static "js/jquery-3.2.1.js" %}></script>
+<script>
+    layui.config({
+        base:"{% static "js/layuiModulesEX/" %}"
+    }).use(['form','paging','layer','laytpl'],function () {
+        var form = layui.form,
+            layer = layui.layer,
+            laytpl = layui.laytpl,
+            paging = layui.paging(),
+            $ = layui.$;
+
+        laytpl.config({
+            open:'<%',
+            close:'%>'
+        });
+
+        paging.init({
+            url:"/school/findAll/",
+            elem:"#content",
+            params:{},
+            contentType : "application/json; charset=utf-8",
+            type: 'POST',
+            tempElem: '#tpl', //模块容器
+            pageConfig: { //分页参数配置
+                elem: 'paged', //分页容器
+                pageSize:10 //分页大小
+            },
+            success:function () {
+//                alert('渲染成功');
+            },
+            fail:function (msg) {
+//                alert('获取数据失败');
+            },
+            complate:function () {
+//                alert("处理完成");
+                $("#content").children('tr').each(function () {
+                    var $schoolAdmin = $(this).children('td:nth-child(2)');
+                    $schoolAdmin.children('a[data-opt=addSchoolAdmin]').on('click',function () {
+                        var schoolid = $(this).data('id');
+                        layer.open({
+                            type:1,
+                            area:['400px','350px'],
+                            content:$("#addSchoolAdminTpl").html(),
+                            success:function (index) {
+                                form.on("submit(create)",function (data) {
+                                    console.log(data.field);
+                                    var newUser={
+                                        last_name:data.field.last_name,
+                                        username:data.field.username,
+                                        is_staff:1,
+                                        password:data.field.password
+                                    };
+                                    var schoolAdmin = {
+                                        schoolid:schoolid,
+                                        universityid:1
+                                    };
+                                    axios.post("/schoolAdmin/addOneSchoolAdmin/",{user:newUser,schoolmanagerinfo:schoolAdmin})
+                                        .then(function (response) {
+                                            console.log(response);
+                                            if(response.data.success){
+                                                layer.close(index);
+                                                layer.msg(response.data.message,{icon:1});
+                                                paging.init();
+                                            }
+                                            else{
+                                                layer.msg(response.data.message,{icon:2});
+                                            }
+                                        });
+                                    return false;
+                                });
+                            }
+                        })
+                    });
+                });
+            }
+        });
+
+        var vm = new Vue({
+            el:"#Vue",
+            data:{},
+            methods:{
+                addSchool:function () {
+                    console.log("增加学院");
+                    $.get('/system/addSchool', null, function (html) {
+                        var addBoxIndex = -1;
+                        if (addBoxIndex !== -1) //说明
+                            return;
+                        addBoxIndex = layer.open({
+                            type: 1,
+                            title: '创建学院',
+                            // offset: ['100px', '20%'],
+                            area: ['55%', '30%'],
+                            content: html
+                            , success: function (layero, index) {
+                                //创建学院监听
+                                form.on('submit(createSchool)', function (data) {
+                                    console.log(data.field);
+{#                                    data.field.universityid = id;#}
+                                    axios.post("/school/addOne/",{"school":data.field})
+                                        .then(function (response) {
+                                            console.log(response.data);
+                                            if(response.data.success) {
+                                                layer.msg(response.data.message, {icon: 1,time:500}, function () {
+                                                    paging.get();
+                                                    layer.close(index);
+                                                });
+                                            }
+                                            else{
+                                                layer.msg(response.data.message);
+                                            }
+                                        })
+                                        .catch(function (response) {
+                                            layer.msg("系统异常，创建失败", {icon: 5, time: 1500}, function () {
+                                                layer.close(index);
+                                            });
+                                            console.log(response);
+                                        });
+                                    return false; //阻止表单跳转。如果需要表单跳转，去掉这段即可。
+                                });
+                                return false; //阻止表单跳转。如果需要表单跳转，去掉这段即可。
+                            }
+                            , end: function () {
+                                addBoxIndex = -1;
+                            }
+                        })
+                    })
+                }
+            }
+         });
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,346 @@
+{% load staticfiles %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>发布信息</title>
+    <link rel="stylesheet" href={% static "common/layui/css/layui.css" %}/>
+    <link rel="stylesheet" href={% static "common/global.css" %}>
+    <script type="text/javascript" src={% static "common/vue.min.js" %}></script>
+</head>
+<body>
+<div class="admin-main" id="Vue" >
+    <blockquote class="layui-elem-quote">
+        <button class="layui-btn layui-btn-small" onclick=window.location.reload()><i class="layui-icon">&#x1002;</i>刷新</button>
+        <a href="#" class="layui-btn layui-btn-small" @click="addinformation">
+            <i class="layui-icon">&#xe61f;</i> 发布交流信息
+        </a>
+    </blockquote>
+    <fieldset class="layui-elem-field">
+        <legend>我发布的信息</legend>
+        <div class="layui-field-box layui-form">
+            <table class="layui-table admin-table">
+                <thead>
+                <tr>
+                    <th>活动主题</th>
+                    <th>活动开始时间</th>
+                    <th>活动结束时间</th>
+                    <th>状态</th>
+                    <th>操作</th>
+                </tr>
+                </thead>
+                <tbody id="content">
+                </tbody>
+            </table>
+        </div>
+    </fieldset>
+    <div class="admin-table-page">
+        <div id="paged" class="page">
+        </div>
+    </div>
+</div>
+</body>
+<script type="text/html" id="tpl">
+    <%# layui.each(d.data,function(index,item){ %>
+    <tr>
+        <td><% item.communication.topic %></td>
+        <td><% item.communication.start %></td>
+        <td><% item.communication.end %></td>
+        <td>
+            <%# if (item.communication.state ==1) { %>
+            未提交申请
+            <%# } %>
+            <%# if (item.communication.state ==2) { %>
+            待审核
+            <%# } %>
+            <%# if (item.communication.state ==3) { %>
+            审核通过
+            <%# } %>
+            <%# if (item.communication.state ==4) { %>
+            审核未通过
+            <%# } %>
+        </td>
+        <td>
+            <%# if (item.communication.state == 1 || item.communication.state == 4) { %>
+            <a class="layui-btn layui-btn-mini" data-opt="edit" data-id="<%item.communication.id%>">编辑</a>
+            <%# } %>
+            <%# if (item.communication.state == 2 || item.communication.state == 3) { %>
+            <a class="layui-btn layui-btn-mini layui-btn-normal" data-opt="detail" data-id="<%item.communication.id%>">查看</a>
+            <%# } %>
+        </td>
+    </tr>
+    <%# }); %>
+</script>
+<script type="text/html" id="detailTpl">
+<div class="admin-main">
+    <form class="layui-form">
+        {% csrf_token %}
+        <div class="layui-form-item">
+            <label class="layui-form-label">活动主题</label>
+            <div class="layui-input-inline">
+                <input class="layui-input" type="text" name="topic" autocomplete="off" />
+            </div>
+            <label class="layui-form-label">所在学院</label>
+            <div class="layui-input-inline">
+                <input class="layui-input" type="text" name="school" autocomplete="off">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">内容</label>
+            <div class="layui-input-inline">
+                <textarea class="layui-input" name="content" autocomplete="off" ></textarea>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">开始时间</label>
+            <div class="layui-input-inline">
+                <input class="layui-input" type="text" id="start" name="start" >
+            </div>
+            <label class="layui-form-label">结束时间</label>
+            <div class="layui-input-inline">
+                <input class="layui-input" type="text" id="end" name="end" >
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">联系电话</label>
+            <div class="layui-input-inline">
+                <input class="layui-input" type="text" name="phone" autocomplete="off" >
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">QQ</label>
+            <div class="layui-input-inline">
+                <input class="layui-input" type="text" name="qq" autocomplete="off" >
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">微信</label>
+            <div class="layui-input-inline">
+                <input class="layui-input" type="text" name="wechat" autocomplete="off" >
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">活动场地</label>
+            <div class="layui-input-block">
+                <img id="picture" style="height: 100px;width: 100px"/>
+            </div>
+        </div>
+    </form>
+</div>
+</script>
+<script type="text/javascript" src={% static "common/axios.min.js" %}></script>
+<script type="text/javascript" src={% static "common/layui/layui.js" %}></script>
+<script type="text/javascript" src={% static "js/jquery-3.2.1.js" %}></script>
+<script>
+    var userid = {{ session_userId }};
+    console.log("用户ID："+userid);
+</script>
+<script>
+    layui.config({
+        base:"{% static 'js/layuiModulesEX/' %}"
+    }).use(['form','paging','layer'],function () {
+        var form = layui.form,
+            layer = layui.layer,
+            laytpl = layui.laytpl,
+            paging = layui.paging(),
+            $ = layui.$;
+
+        laytpl.config({
+            open:'<%',
+            close:'%>'
+        });
+
+        var vm = new Vue({
+            el:"#Vue",
+            data:{},
+            methods:{
+                addinformation:function () {
+                    $.get('/student/addInformation',null,function (html) {
+                        var addBoxIndex = -1;
+                        if (addBoxIndex !== -1) //说明
+                            return;
+                        addBoxIndex = layer.open({
+                            type: 1,
+                            title: '发布信息',
+                            offset: '10px',
+                            area: ['800px', '90%'],
+                            content: html
+                            ,success:function (layero, index) {
+                                form.on('submit(submit)',function (data) {
+                                    data.field.userid = userid;
+                                    data.field.state = 2;
+                                    console.log(data.field);
+                                    axios.post("/communication/addOne/",{"communication":data.field})
+                                        .then(function (res) {
+                                            if(res.data.success) {
+                                                layer.msg(res.data.message, {icon: 1});
+                                                paging.init();
+                                                layer.close(index);
+                                            }
+                                        })
+                                        .catch(function (msg) {
+                                            console.log(msg);
+                                        })
+                                });
+
+                                form.on('submit(saveTemporary)',function (data) {
+                                    data.field.userid = userid;
+                                    data.field.state = 1;
+                                    console.log(data.field);
+                                    axios.post("/communication/addOne/",{"communication":data.field})
+                                        .then(function (res) {
+                                           if(res.data.success) {
+                                                layer.msg(res.data.message, {icon: 1});
+                                                paging.init();
+                                                layer.close(index);
+                                            }
+                                        })
+                                        .catch(function (msg) {
+                                            console.log(msg);
+                                        })
+                                });
+
+
+                                form.on('submit(reload)',function () {
+                                    console.log(1);
+                                    layer.close(index);
+                                })
+                            }
+                        })
+                    })
+                }
+            }
+        });
+
+        paging.init({
+            openWait: true,
+            url: '/communication/findListByUserId/',
+            elem: '#content', //内容容器
+            params: { //发送到服务端的参数
+                userid:userid
+            },
+            contentType: "application/json; charset=utf-8",
+            type: 'POST',
+            tempElem: '#tpl', //模块容器
+            pageConfig: { //分页参数配置
+                elem: '#paged', //分页容器
+                pageSize: 10 //分页大小
+            },
+            success: function (res) { //渲染成功的回调
+                //alert('渲染成功');
+            },
+            fail: function (msg) { //获取数据失败的回调
+                //alert('获取数据失败')
+            },
+            complate: function () { //完成的回调
+                //alert('处理完成');
+                $("#content").children('tr').each(function () {
+                    var $that = $(this).children('td:last-child');
+                    var id = $that.find('a[data-opt=edit]').data('id')?$that.find('a[data-opt=edit]').data('id'):$that.find('a[data-opt=detail]').data('id');
+
+                    $that.find('a[data-opt=edit]').on('click',function () {
+                        $.get('/student/addInformation?communicationid='+id,null,function (html) {
+                            var addBoxIndex = -1;
+                            if (addBoxIndex !== -1) //说明
+                                return;
+                            addBoxIndex = layer.open({
+                                type: 1,
+                                title: '编辑信息',
+                                offset: '10px',
+                                area: ['800px', '90%'],
+                                content: html
+                                ,success:function (layero, index) {
+                                    form.on('submit(sub)',function (data) {
+                                        data.field.userid = userid;
+                                        data.field.state = 2;
+                                        data.field.id = id;
+                                        data.field.activity = '';
+                                        console.log(data.field);
+                                        axios.post("/communication/updateById/",{"communication":data.field})
+                                            .then(function (res) {
+                                                if(res.data.success) {
+                                                    layer.msg(res.data.message, {icon: 1});
+                                                    paging.init();
+                                                    layer.close(index);
+                                                }
+                                            })
+                                            .catch(function (msg) {
+                                                console.log(msg);
+                                            })
+                                    });
+
+                                    form.on('submit(saveTemporary)',function (data) {
+                                        data.field.userid = userid;
+                                        data.field.state = 1;
+                                        data.field.id = id;
+                                        data.field.activity = '';
+                                        console.log(data.field);
+                                        axios.post("/communication/updateById/",{"communication":data.field})
+                                            .then(function (res) {
+                                               if(res.data.success) {
+                                                    layer.msg(res.data.message, {icon: 1});
+                                                    paging.init();
+                                                    layer.close(index);
+                                                }
+                                            })
+                                            .catch(function (msg) {
+                                                console.log(msg);
+                                            })
+                                    });
+
+
+                                    form.on('submit(reload)',function () {
+                                        console.log(1);
+                                        layer.close(index);
+                                    })
+                                }
+                            })
+                        });
+                    });
+                    $that.find('a[data-opt=detail]').on('click',function () {
+                        axios.post("/communication/findOneDetailById/",{"id":id})
+                            .then(function (response) {
+                                console.log(response.data);
+                                var communication = response.data.communication;
+                                var school = response.data.school;
+                                var image = response.data.image;
+                                var publisher = response.data.publisher;
+                                if(response.data.success){
+                                    layer.open({
+                                        type:1,
+                                        content:$("#detailTpl").html(),
+                                        area:["700px","80%"],
+                                        success:function () {
+                                            $("form input[name=topic]").val(communication.topic);
+                                            $("form input[name=school]").val(school.name);
+                                            $("form textarea[name=content]").html(communication.content);
+                                            $("form input[name=start]").val(communication.start);
+                                            $("form input[name=end]").val(communication.end);
+                                            $("form input[name=phone]").val(communication.phone);
+                                            $("form input[name=qq]").val(communication.qq);
+                                            $("form input[name=wechat]").val(communication.wechat);
+                                            if(image!==null){
+                                                $("#picture").attr("src",image.path);
+                                            }
+                                            else{
+                                                $("#picture").attr("src","");
+                                            }
+                                        },
+                                        end:function () {}
+                                    });
+                                }
+                                else{
+                                    layer.msg("程序异常，请重试");
+                                }
+                            })
+                            .catch(function (msg) {
+                                console.log(msg);
+                            });
+                    });
+                });
+            }
+        });
+
+    });
+</script>
+</html>

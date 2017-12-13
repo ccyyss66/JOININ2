@@ -1,0 +1,336 @@
+{% load staticfiles %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>学院端查看活动信息</title>
+    <link rel="stylesheet" href={% static "common/layui/css/layui.css" %}/>
+    <link rel="stylesheet" href={% static "common/global.css" %}>
+    <script type="text/javascript" src={% static "common/axios.min.js" %}></script>
+</head>
+<body>
+<div class="admin-main" id="Vue">
+    <blockquote class="layui-elem-quote">
+        <button type="button" class="layui-btn layui-btn-mini" onclick="window.location.reload()">刷新</button>
+    </blockquote>
+    <fieldset class="layui-elem-field">
+        <legend>活动信息</legend>
+        <div class="layui-field-box layui-form">
+            <table class="layui-table admin-table">
+                <thead>
+                <tr>
+                    <th>主题</th>
+                    <th>发布者</th>
+                    <th>开始时间</th>
+                    <th>结束时间</th>
+                    <th>操作</th>
+                </tr>
+                </thead>
+                <tbody id="content">
+                </tbody>
+            </table>
+        </div>
+    </fieldset>
+    <div class="admin-table-page">
+        <div id="paged" class="page">
+        </div>
+    </div>
+</div>
+<script type="text/html" id="tpl">
+    <%# layui.each(d.data,function(index,item){ %>
+    <%# if(item.communication.state !=1 && item.communication.state !=4) { %>
+    <tr>
+        <td><% item.communication.topic||"--" %></td>
+        <td><% item.publisher.realname||"--" %></td>
+        <td><% item.communication.start||"--" %></td>
+        <td><% item.communication.end||"--" %></td>
+        <td>
+            <%# if(item.communication.state==3){ %>
+            <a class="layui-btn layui-btn-mini" data-opt="detail" data-id="<% item.communication.id %>">详情</a>
+            <%# } %>
+            <%# if(item.communication.state==2){ %>
+            <a class="layui-btn layui-btn-mini layui-btn-danger" data-opt="verify"
+               data-id="<% item.communication.id %>">审核</a>
+            <%# } %>
+        </td>
+    </tr>
+    <%# } %>
+    <%# }); %>
+</script>
+<script type="text/html" id="detailTpl">
+    <div class="admin-main">
+        <form class="layui-form">
+            {% csrf_token %}
+            <div class="layui-form-item">
+                <label class="layui-form-label">发布者姓名</label>
+                <div class="layui-input-inline">
+                    <input class="layui-input" type="text" name="name" autocomplete="off" readonly/>
+                </div>
+                <label class="layui-form-label">发布者电话</label>
+                <div class="layui-input-inline">
+                    <input class="layui-input" type="text" name="publisherphone" autocomplete="off" readonly>
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">活动主题</label>
+                <div class="layui-input-inline">
+                    <input class="layui-input" type="text" name="topic" autocomplete="off" readonly/>
+                </div>
+                <label class="layui-form-label">所在学院</label>
+                <div class="layui-input-inline">
+                    <input class="layui-input" type="text" name="school" autocomplete="off" readonly>
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">内容</label>
+                <div class="layui-input-inline">
+                    <textarea class="layui-input" name="content" autocomplete="off" readonly></textarea>
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">开始时间</label>
+                <div class="layui-input-inline">
+                    <input class="layui-input" type="text" id="start" name="start" readonly>
+                </div>
+                <label class="layui-form-label">结束时间</label>
+                <div class="layui-input-inline">
+                    <input class="layui-input" type="text" id="end" name="end" readonly>
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">联系电话</label>
+                <div class="layui-input-inline">
+                    <input class="layui-input" type="text" name="phone" autocomplete="off" readonly>
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">QQ</label>
+                <div class="layui-input-inline">
+                    <input class="layui-input" type="text" name="qq" autocomplete="off" readonly>
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">微信</label>
+                <div class="layui-input-inline">
+                    <input class="layui-input" type="text" name="wechat" autocomplete="off" readonly>
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">活动场地</label>
+                <div class="layui-input-block">
+                    <img id="picture" style="height: 100px;width: 100px"/>
+                </div>
+            </div>
+            <div class="layui-form-item" id="check" style="float: right">
+                <button type="button" class="layui-btn" lay-filter="pass" lay-submit>通过</button>
+                <button type="button" class="layui-btn" lay-filter="nopass" lay-submit>不通过</button>
+                <button type="button" class="layui-btn" lay-filter="reload" lay-submit>返回</button>
+            </div>
+            <div class="layui-form-item" id="watch" style="float: right">
+                <button type="button" class="layui-btn" lay-filter="reload" lay-submit>返回</button>
+            </div>
+        </form>
+    </div>
+</script>
+<script type="text/javascript" src={% static "common/vue.min.js" %}></script>
+<script type="text/javascript" src={% static "common/layui/layui.js" %}></script>
+{#<script type="text/javascript" src={% static "common/jquery/jquery-1.11.1.min.js" %}></script>#}
+<script>
+    var userid = {{ session_userId }};
+    layui.config({
+        base: "{% static 'js/layuiModulesEX/' %}"
+    }).use(['form', 'paging', 'laytpl'], function () {
+        var form = layui.form,
+            laytpl = layui.laytpl,
+            paging = layui.paging(),
+            layer = layui.layer,
+            $ = layui.$;
+
+        laytpl.config({
+            open: '<%',
+            close: '%>'
+        });
+
+        paging.init({
+            openWait: true,
+            url: '/communication/findByCondition/',
+            elem: '#content', //内容容器
+            params: { //发送到服务端的参数
+                userid: "",
+                state: "",
+                schoolid: ""
+            },
+            contentType: "application/json; charset=utf-8",
+            type: 'POST',
+            tempElem: '#tpl', //模块容器
+            pageConfig: { //分页参数配置
+                elem: '#paged', //分页容器
+                pageSize: 10 //分页大小
+            },
+            success: function (res) { //渲染成功的回调
+                //alert('渲染成功');
+            },
+            fail: function (msg) { //获取数据失败的回调
+                //alert('获取数据失败')
+            },
+            complate: function () { //完成的回调
+                form.render();
+                $("#content").children('tr').each(function () {
+                    var $that = $(this).children('td:last-child');
+                    var detail_id = $that.children('a[data-opt=detail]').data('id');
+                    var verify_id = $that.children('a[data-opt=verify]').data('id');
+
+                    $that.children('a[data-opt=detail]').on('click', function () {
+                        axios.post("/communication/findOneDetailById/", {"id": detail_id})
+                            .then(function (response) {
+                                console.log(response.data);
+                                var communication = response.data.communication;
+                                var school = response.data.school;
+                                var image = response.data.image;
+                                var publisher = response.data.publisher;
+                                console.log(publisher);
+                                if (response.data.success) {
+                                    layer.open({
+                                        type: 1,
+                                        content: $("#detailTpl").html(),
+                                        area: ["700px", "80%"],
+                                        success: function (layero, index) {
+                                            $("form input[name=name]").val(publisher.realname);
+                                            $("form input[name=publisherphone]").val(publisher.mobilephone);
+                                            $("form input[name=topic]").val(communication.topic);
+                                            $("form input[name=school]").val(school.name);
+                                            $("form textarea[name=content]").html(communication.content);
+                                            $("form input[name=start]").val(communication.start);
+                                            $("form input[name=end]").val(communication.end);
+                                            $("form input[name=phone]").val(communication.contact);
+                                            $("form input[name=qq]").val(communication.qq);
+                                            $("form input[name=wechat]").val(communication.wechat);
+                                            $('#check').hide();
+                                            if (image !== null) {
+                                                $("#picture").attr("src", image.path);
+                                            }
+                                            else {
+                                                $("#picture").attr("src", "");
+                                            }
+                                              //返回按钮
+                                            form.on('submit(reload)',function () {
+                                                console.log("返回");
+                                                layer.close(index);
+                                            })
+                                        },
+                                        end: function () {
+                                        }
+                                    });
+                                }
+                                else {
+                                    layer.msg("程序异常，请重试");
+                                }
+                            })
+                            .catch(function (msg) {
+                                console.log(msg);
+                            });
+                    });
+
+                    $that.find("a[data-opt=verify]").on('click', function () {
+                        console.log("审核");
+                        axios.post("/communication/findOneDetailById/", {"id": verify_id})
+                            .then(function (response) {
+                                {#                                console.log(response.data);#}
+                                var communication = response.data.communication;
+                                var school = response.data.school;
+                                var image = response.data.image;
+                                var publisher = response.data.publisher;
+                                if (response.data.success) {
+                                    layer.open({
+                                        type: 1,
+                                        content: $("#detailTpl").html(),
+                                        area: ["700px", "80%"],
+                                        success: function (layero, index) {
+                                            $("form input[name=name]").val(publisher.realname);
+                                            $("form input[name=publisherphone]").val(publisher.mobilephone);
+                                            $("form input[name=topic]").val(communication.topic);
+                                            $("form input[name=school]").val(school.name);
+                                            $("form textarea[name=content]").html(communication.content);
+                                            $("form input[name=start]").val(communication.start);
+                                            $("form input[name=end]").val(communication.end);
+                                            $("form input[name=phone]").val(communication.contact);
+                                            $("form input[name=qq]").val(communication.qq);
+                                            $("form input[name=wechat]").val(communication.wechat);
+                                            if (image !== null) {
+                                                $("#picture").attr("src", image.path);
+                                            }
+                                            else {
+                                                $("#picture").attr("src", "");
+                                            }
+                                            $("#watch").hide();
+
+                                            //返回按钮
+                                            form.on('submit(reload)',function () {
+                                                console.log("返回");
+                                                layer.close(index);
+                                            })
+
+                                            //通过按钮
+                                            form.on('submit(pass)',function () {
+                                                top.layer.confirm("确认通过吗？",function (index1) {
+                                                var state = 3; //通过状态
+                                                var comid = communication.id;
+                                                axios.post("/communication/checkcommunication/", {
+                                                    "state": state,
+                                                    "id": comid
+                                                })
+                                                    .then(function (response) {
+                                                        top.layer.close(index1);
+                                                        layer.msg("操作成功", {time: 1500}, function () {
+                                                         layer.close(index);
+                                                         location.reload();
+                                                        })
+                                                    })
+                                                    .catch(function (response) {
+                                                        console.log(msg);
+                                                    })
+
+                                                })
+                                            })
+
+                                            //不通过按钮
+                                            form.on('submit(nopass)',function () {
+                                                top.layer.confirm("确认不通过吗？",function (index1) {
+                                                var state = 4; //通过状态
+                                                var comid = communication.id;
+                                                axios.post("/communication/checkcommunication/", {
+                                                    "state": state,
+                                                    "id": comid
+                                                })
+                                                    .then(function (response) {
+                                                        top.layer.close(index1);
+                                                        layer.msg("操作成功", {time: 1500}, function () {
+                                                            layer.close(index);
+                                                            location.reload();
+                                                        })
+                                                    })
+                                                    .catch(function (response) {
+                                                        console.log(msg);
+                                                    })
+                                                })
+                                            })
+                                        },
+                                        end: function () {
+                                        }
+                                    });
+                                }
+                                else {
+                                    layer.msg("程序异常，请重试");
+                                }
+                            })
+                            .catch(function (msg) {
+                                console.log(msg);
+                            });
+                    });
+                });
+            }
+        });
+    });
+</script>
+</body>
+</html>

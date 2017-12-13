@@ -1,0 +1,188 @@
+{% load staticfiles %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>学生查看信息</title>
+    <link rel="stylesheet" href={% static "common/layui/css/layui.css" %}/>
+    <link rel="stylesheet" href={% static "common/global.css" %}>
+    <script type="text/javascript" src={% static "common/vue.min.js" %}></script>
+</head>
+<body>
+<div class="admin-main">
+    <blockquote class="layui-elem-quote">
+        <button class="layui-btn layui-btn-small" onclick=window.location.reload()><i class="layui-icon">&#x1002;</i>刷新
+        </button>
+    </blockquote>
+    <fieldset class="layui-elem-field">
+        <legend>查看信息</legend>
+        <div class="layui-field-box layui-form">
+            <table class="layui-table admin-table">
+                <thead>
+                <tr>
+                    <th>活动主题</th>
+                    <th>活动开始时间</th>
+                    <th>活动结束时间</th>
+                    <th>所属学院</th>
+                    <th>操作</th>
+                </tr>
+                </thead>
+                <tbody id="content">
+                </tbody>
+            </table>
+        </div>
+    </fieldset>
+    <div class="admin-table-page">
+        <div id="paged" class="page">
+        </div>
+    </div>
+</div>
+<script type="text/html" id="tpl">
+    <%# layui.each(d.data,function(index,item){ %>
+    <tr>
+        <td><% item.communication.topic||"--" %></td>
+        <td><% item.communication.start||"--" %></td>
+        <td><% item.communication.end||"--" %></td>
+        <td><% item.school.name||"--" %></td>
+        <td>
+            <a class="layui-btn layui-btn-mini" data-opt="detail" data-id="<% item.communication.id %>">查看 </a>
+        </td>
+    </tr>
+    <%# }); %>
+</script>
+<script type="text/javascript" src={% static "common/axios.min.js" %}></script>
+<script type="text/javascript" src={% static "common/layui/layui.js" %}></script>
+<script type="text/html" id="detailTpl">
+    <%# var item = d%>
+    <div class="admin-main">
+        <div class="layui-form-item">
+            <label class="layui-form-label">活动主题</label>
+            <div class="layui-input-inline">
+                <input class="layui-input" type="text" name="topic" autocomplete="off"
+                       value="<% item.communication.topic %>" readonly>
+            </div>
+            <label class="layui-form-label">所在学院</label>
+            <div class="layui-input-inline">
+                <input class="layui-input" type="text" name="school" value="<% item.school.name %>" readonly>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">内容</label>
+            <div class="layui-input-inline">
+                <textarea class="layui-input" name="content" autocomplete="off" value="<% item.communication.content %>"
+                          readonly></textarea>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">开始时间</label>
+            <div class="layui-input-inline">
+                <input class="layui-input" type="text" id="start" name="start" value="<% item.communication.start %>"
+                       readonly>
+            </div>
+            <label class="layui-form-label">结束时间</label>
+            <div class="layui-input-inline">
+                <input class="layui-input" type="text" id="end" name="end" value="<% item.communication.end %>"
+                       readonly>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">联系电话</label>
+            <div class="layui-input-inline">
+                <input class="layui-input" type="text" name="phone" autocomplete="off"
+                       value="<% item.communication.phone %>" readonly>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">QQ</label>
+            <div class="layui-input-inline">
+                <input class="layui-input" type="text" name="qq" autocomplete="off" value="<% item.communication.qq %>"
+                       readonly>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">微信</label>
+            <div class="layui-input-inline">
+                <input class="layui-input" type="text" name="wechat" autocomplete="off"
+                       value="<% item.communication.wechat %>" readonly>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">活动场地</label>
+            <div class="layui-input-block">
+                <img id="workpic" style="height: 100px;width: 100px">
+            </div>
+        </div>
+    </div>
+</script>
+<script>
+    var userid = {{ session_userId }};
+    layui.config({
+        base: "{% static 'js/layuiModulesEX/' %}"
+    }).use(['form', 'paging', 'laytpl'], function () {
+        var form = layui.form,
+            laytpl = layui.laytpl,
+            paging = layui.paging(),
+            $ = layui.$;
+
+        laytpl.config({
+            open: '<%',
+            close: '%>'
+        });
+
+        paging.init({
+            openWait: true,
+            url: '/communication/findByCondition/',
+            elem: '#content', //内容容器
+            params: { //发送到服务端的参数
+                userid: "",
+                state: "",
+                schoolid: ""
+            },
+            contentType: "application/json; charset=utf-8",
+            type: 'POST',
+            tempElem: '#tpl', //模块容器
+            pageConfig: { //分页参数配置
+                elem: '#paged', //分页容器
+                pageSize: 10 //分页大小
+            },
+            success: function (res) { //渲染成功的回调
+                //alert('渲染成功');
+            },
+            fail: function (msg) { //获取数据失败的回调
+                //alert('获取数据失败')
+            },
+            complate: function () { //完成的回调
+                form.render();
+                $("#content").children('tr').each(function () {
+                    //获取每行记录的id值
+                    var $that = $(this).children('td:last-child');
+                    var id = $that.find('a[data-opt=detail]').data('id');
+                    console.log(id);
+                    $that.children('a[data-opt=detail]').on('click', function () {
+                        axios.post('/communication/findOneDetailById/', {"id": id})
+                            .then(function (response) {
+                                console.log(response.data);
+                                var information = response.data;
+                                layer.open({
+                                    type: 1,
+                                    title: "查看信息",
+                                    content: laytpl($('#detailTpl').html()).render(information),
+                                    shade: [0.5, '#FFF'], //模态框
+                                    area: ['85%', '85%'],
+                                    zIndex: 19950924,
+                                    btn: ['返回'],
+                                    yes: function (index) {
+                                        layer.close(index);
+                                    }, success: function (index) {
+
+                                    }
+                                });
+                            })
+                    });
+                });
+            }
+        });
+    });
+</script>
+</body>
+</html>

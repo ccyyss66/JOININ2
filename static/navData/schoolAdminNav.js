@@ -1,0 +1,22 @@
+var navs = [{
+    "title":"个人信息",
+    "icon":"fa-address-book",
+    "spread":false,
+    "href":"/schoolAdmin/personalInfo"
+},{
+    "title":"系专业班级",
+    "icon":"fa-cubes",
+    "spread":false,
+    "href":"/schoolAdmin/departmentAndMajorAndClass"
+},{
+    "title":"活动信息",
+    "icon":"fa-futbol-o",
+    "spread":false,
+    "href":"/schoolAdmin/communication"
+},{
+    "title":"院组织管理",
+    "icon":"fa-user-circle-o",
+    "spread":false,
+    "href":"/schoolAdmin/organized"
+}
+];

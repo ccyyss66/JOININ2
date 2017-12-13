@@ -1,0 +1,81 @@
+<div class="admin-main">
+    <fieldset class="layui-elem-field">
+        <legend>编辑班级</legend>
+        <div class="layui-field-box">
+            <form class="layui-form">
+                {% csrf_token %}
+                <div class="layui-form-item">
+                    <label class="layui-form-label">选择系：</label>
+                    <div class="layui-input-inline">
+                        <select name="department" class="layui-input" lay-filter="department">
+                            <option value="">请选择系</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">选择专业：</label>
+                    <div class="layui-input-inline">
+                        <select name="major" class="layui-input">
+                            <option value="">请选择专业</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">班级名称：</label>
+                    <div class="layui-input-inline">
+                        <input name="name" placeholder="请输入班级名称" class="layui-input" autocomplete="off">
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <div class="layui-input-block">
+                        <button lay-filter="createClass" class="layui-btn" lay-submit>完成</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </fieldset>
+</div>
+<script>
+    layui.use(['form'],function () {
+        var form = layui.form;
+        form.render();
+
+        var department = "form select[name=department]",
+            major = "form select[name=major]";
+        //联动对象
+        var linkage = {};
+        //初始化
+        linkage.formRender = function (obj, tip) {
+            $(obj).empty();
+            $(obj).append('<option value="">' + tip + '</option>');
+            form.render('select');
+        };
+        //渲染下拉框
+        linkage.read = function (obj, url, params, init) {
+            axios.post(url,params)
+                .then(function (res) {
+                    var array = res.data.data;
+                    console.log(array);
+                    var html = '';
+                    for (var i in array) {
+                        html += '<option value=' + array[i].id + '>' + array[i].name + '</option>';
+                    }
+                    $(obj).append(html);
+                    form.render('select');
+                     if (init)
+                         $(obj).next().find('[lay-value="' + id + '"]').click();
+                })
+                .catch(function (res) {
+                    console.log(res);
+                });
+        };
+
+        linkage.read(department,"/department/findBySchoolId/",{"id":userDetail.schoolAdmin.schoolid});
+
+        form.on("select(department)",function (data) {
+            console.log(data.value);
+            linkage.formRender(major,"请选择专业");
+            linkage.read(major,"/major/findByDepartmentId/",{"id":data.value})
+        });
+    });
+</script>

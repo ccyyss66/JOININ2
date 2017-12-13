@@ -1,0 +1,19 @@
+<div class="admin-main">
+    <fieldset class="layui-elem-field">
+        <legend>创建系</legend>
+        <div class="layui-field-box">
+            <form class="layui-form">
+                {% csrf_token %}
+                <div class="layui-form-item">
+                    <div class="layui-inline">
+                        <label class="layui-form-label">系名称：</label>
+                        <div class="layui-input-inline" style="width: 300px">
+                            <input name="name" placeholder="请输入系名称" class="layui-input" autocomplete="off">
+                        </div>
+                        <button lay-filter="createDepartment" class="layui-btn" lay-submit>创建</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </fieldset>
+</div>

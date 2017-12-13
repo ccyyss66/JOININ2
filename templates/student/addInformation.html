@@ -1,0 +1,133 @@
+<div class="admin-main">
+    <fieldset class="layui-elem-field">
+        <legend>发布信息</legend>
+        <div class="layui-field-box">
+            <form class="layui-form">
+                {% csrf_token %}
+                <div class="layui-form-item">
+                    <label class="layui-form-label">活动主题</label>
+                    <div class="layui-input-inline">
+                        <input class="layui-input" type="text" name="topic" autocomplete="off" >
+                    </div>
+                    <label class="layui-form-label">所在学院</label>
+                    <div class="layui-input-inline">
+                        <select id="school" name="schoolid" class="layui-input">
+                            <option value="">请选择学院</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                <label class="layui-form-label">内容</label>
+                <div class="layui-input-inline">
+                    <textarea class="layui-input" name="content" autocomplete="off" ></textarea>
+                </div>
+                </div>
+                <div class="layui-form-item">
+                <label class="layui-form-label">开始时间</label>
+                <div class="layui-input-inline">
+                    <input class="layui-input" type="text" id="start" name="start" >
+                </div>
+                <label class="layui-form-label">结束时间</label>
+                <div class="layui-input-inline">
+                    <input class="layui-input" type="text" id="end" name="end" >
+                </div>
+            </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">联系电话</label>
+                    <div class="layui-input-inline">
+                        <input class="layui-input" type="text" name="phone" autocomplete="off" >
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">QQ</label>
+                    <div class="layui-input-inline">
+                        <input class="layui-input" type="text" name="qq" autocomplete="off" >
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">微信</label>
+                    <div class="layui-input-inline">
+                        <input class="layui-input" type="text" name="wechat" autocomplete="off" >
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                <label class="layui-form-label">活动场地</label>
+                <div class="layui-input-block">
+                    <button type="button" name="activity" id="activity" class="layui-btn">
+                        <i class="layui-icon">&#xe67c;</i>上传图片
+                    </button>
+                    <img id="workpic" style="height: 100px;width: 100px">
+                </div>
+                </div>
+                <div class="layui-form-item">
+                    <div class="layui-input-block">
+                        <button type="button" class="layui-btn" lay-filter="sub" lay-submit>提交</button>
+                        <button type="button" class="layui-btn" lay-filter="saveTemporary" lay-submit>暂存</button>
+                        <button type="button" class="layui-btn" lay-filter="reload" lay-submit>返回</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </fieldset>
+</div>
+<script>
+    var communication_id = {{ communication_id }};
+    var communication = {};
+    if(communication_id) {
+        axios.post('/communication/findOneDetailById/', {"id": communication_id})
+            .then(function (response) {
+                communication = response.data.communication;
+                var image = response.data.image;
+                $("form input[name=topic]").val(communication.topic);
+                $("form textarea[name=content]").html(communication.content);
+                $("form input[name=start]").val(communication.start);
+                $("form input[name=end]").val(communication.end);
+                $("form input[name=phone]").val(communication.phone);
+                $("form input[name=qq]").val(communication.qq);
+                $("form input[name=wechat]").val(communication.wechat);
+                if(image!==null){
+                    $("#workpic").attr("src",image.path);
+                }
+                else{
+                    $("#workpic").attr("src",null);
+                }
+            })
+            .catch(function (msg) {
+                console.log(msg);
+            });
+    }
+</script>
+<script>
+    layui.use(['form','laydate'],function () {
+        var form = layui.form,
+            $ = layui.$,
+            laydate = layui.laydate;
+        form.render();
+        var school = [];
+        axios.post('/school/findAll/')
+            .then(function (res) {
+                var array = res.data.data;
+                var html = '';
+                for (var i in array) {
+                    html += '<option value=' + array[i].school.id + '>' + array[i].school.name + '</option>';
+                }
+                $('#school').append(html);
+                form.render('select');
+                if(communication_id){
+                    $('#school').next().find('[lay-value='+communication.schoolid+']').click();
+                }
+            })
+            .catch(function (res) {
+                console.log(res);
+            });
+
+
+
+        laydate.render({
+            elem: "#start"
+        });
+        laydate.render({
+            elem: "#end"
+        });
+    });
+</script>

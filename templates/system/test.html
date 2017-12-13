@@ -1,0 +1,46 @@
+{% load staticfiles %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>图片测试</title>
+    <link rel="stylesheet" href={% static "common/layui/css/layui.css" %}/>
+    <link rel="stylesheet" href={% static "common/global.css" %}>
+    <script type="text/javascript" src={% static "common/axios.min.js" %}></script>
+</head>
+<body>
+<img src={% static "media/1.jpg" %}>
+<button type="button" name="fileUp" id="picture">上传图片</button>
+<script type="text/javascript" src={% static "common/layui/layui.js" %}></script>
+<script>
+    console.log("{% static "media" %}");
+    layui.use(['form','upload'],function () {
+        var $ = layui.$,
+            upload = layui.upload;
+
+{#        axios.post("/image/findOneById/",{})#}
+{#            .then(function (response) {#}
+{#                console.log(response);#}
+{#            })#}
+{#            .catch(function (msg) {#}
+{#                console.log(msg);#}
+{#            });#}
+
+        upload.render({
+            url:"/image/upload/",
+            field:"fileUp",
+            elem:"#picture",
+            done:function (response) {
+                console.log(response.data);
+            },
+            before:function () {
+                console.log("图片上传中");
+            },
+            error:function (msg) {
+                console.log(msg);
+            }
+        });
+    });
+</script>
+</body>
+</html>

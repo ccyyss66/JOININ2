@@ -1,0 +1,575 @@
+{% load staticfiles %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>学院端查看活动信息</title>
+    <link rel="stylesheet" href={% static "common/layui/css/layui.css" %}/>
+    <link rel="stylesheet" href={% static "common/global.css" %}>
+    <script type="text/javascript" src={% static "common/axios.min.js" %}></script>
+    <style type="text/css">
+        #oprateTd .layui-nav-bar {
+            display: none;
+        }
+
+        #oprateTd .layui-this:after {
+            display: none;
+        }
+
+        .oprateUl {
+            background-color: inherit;
+            padding: 0
+        }
+
+        .oprateUl .layui-nav-more {
+            display: none !important;
+        }
+
+        .oprateUl > li {
+            line-height: 0 !important;
+        }
+
+        .oprateUl > li > a {
+            padding: 0 5px !important;
+        }
+
+        .oprateUl > li > a > span {
+            padding: 0 5px !important;
+            font-size: 12px !important;
+        }
+
+        .oprateUl > li > dl {
+            top: 25px !important;
+        }
+    </style>
+</head>
+<body>
+<div class="admin-main" id="Vue">
+    <blockquote class="layui-elem-quote">
+        <button type="button" class="layui-btn layui-btn-small" onclick="window.location.reload()"><i
+                class="layui-icon">&#x1002;</i> 刷新
+        </button>
+        <a href="#" class="layui-btn layui-btn-small layui-btn-normal" @click="addone">
+            <i class="layui-icon">&#xe608;</i> 创建院组织
+        </a>
+    </blockquote>
+    <fieldset class="layui-elem-field">
+        <legend>活动信息</legend>
+        <div class="layui-field-box layui-form">
+            <table class="layui-table admin-table">
+                <thead>
+                <tr>
+                    <th>社团名称</th>
+                    <th>主席/会长</th>
+                    <th>操作</th>
+                </tr>
+                </thead>
+                <tbody id="content">
+                </tbody>
+            </table>
+        </div>
+    </fieldset>
+    <div class="admin-table-page">
+        <div id="paged" class="page">
+        </div>
+    </div>
+</div>
+<script type="text/html" id="tpl">
+    <%# layui.each(d.data,function(index,item){ %>
+    <%# console.log(item) %>
+    <tr>
+        <td><% item.organize.name %></td>
+        <td> <%# if(item.chairmanUser){ %>
+            <a href="javascript:;" style="text-decoration: underline" data-opt="chairman"
+               data-id="<% item.chairmanUser.id %>"><% item.chairmanUser.last_name %></a>
+            <a class="layui-btn layui-btn-mini layui-btn-danger" data-opt="changeChairman"
+               data-id="<% item.organize.id %>">指定主席</a>
+            <%# } %>
+            <%# if(!item.chairmanUser){ %>
+            <a class="layui-btn layui-btn-mini layui-btn-danger" data-opt="createChairman"
+               data-id="<% item.organize.id %>">新添主席</a>
+            <%# } %>
+        </td>
+        <td id="oprateTd" data-id="<% item.organize.id %>">
+            <ul class="layui-nav oprateUl">
+                <li class="layui-nav-item">
+                    <a href="javascript:;" target="_self" data-opt="depart">
+                        <span class="layui-btn  layui-btn-mini layui-btn-normal">查看组织</span>
+                    </a>
+                </li>
+                <li class="layui-nav-item">
+                    <a href="javascript:;">
+                        <span class="layui-btn layui-btn-mini layui-btn-primary">更多操作</span>
+                    </a>
+                    <dl class="layui-nav-child" style="z-index: 99999999">
+                        <dd>
+                            <a href="javascript:;" data-opt="more">
+                                <span>查看详情</span>
+                            </a>
+                        </dd>
+                        <dd>
+                            <a href="javascript:;" data-opt="modify">
+                                <span>修改组织</span>
+                            </a>
+                        </dd>
+                        <dd>
+                            <a href="javascript:;" target="_self" data-opt="dismiss">
+                                <span>解散组织</span>
+                            </a>
+                        </dd>
+                    </dl>
+                </li>
+            </ul>
+        </td>
+    </tr>
+    <%# }); %>
+</script>
+<script type="text/html" id="OrganizeTpl">
+    <div class="admin-main">
+        <div id="school">
+            <div class="layui-field-box">
+                <form class="layui-form">
+                    {% csrf_token %}
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">组织名称：</label>
+                        <div class="layui-input-inline">
+                            <input name="name" placeholder="请输入组织名称" class="layui-input" autocomplete="off">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">组织介绍：</label>
+                        <div class="layui-input-block">
+                            <textarea name="intro" placeholder="请输入内容" class="layui-textarea"></textarea>
+                        </div>
+                    </div>
+                    <div class="layui-form-item" id="btn">
+                        <div class="layui-input-block " style="float: right">
+                            <button lay-filter="create" class="layui-btn" lay-submit>创建</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</script>
+<script type="text/html" id="changeChairman">
+    <div class="layui-form" style="margin-top: 15px">
+        <div class="layui-form-item">
+            <label class="layui-form-label">人选:</label>
+            <div class="layui-input-inline">
+                <select name="chairmanSelect" class="layui-input" id="selectChairman">
+                    <option value="">请从以下人选中选择</option>
+                </select>
+            </div>
+            <button class="layui-btn" lay-filter="save" lay-submit>完成</button>
+        </div>
+    </div>
+</script>
+<script type="text/html" id="createChairman">
+    <div class="layui-form" style="margin-top: 15px">
+        <div class="layui-form-item">
+            <label class="layui-form-label">用户名:</label>
+            <div class="layui-input-inline">
+                <input class="layui-input" autocomplete="请输入用户名" name="username">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">密码:</label>
+            <div class="layui-input-inline">
+                <input type="password" class="layui-input" autocomplete="请输入密码" name="password">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">姓名:</label>
+            <div class="layui-input-inline">
+                <input class="layui-input" autocomplete="请输入姓名" name="last_name">
+            </div>
+        </div>
+{#        <div class="layui-form-item">#}
+{#            <label class="layui-form-label">手机:</label>#}
+{#            <div class="layui-input-inline">#}
+{#                <input class="layui-input" autocomplete="请输入手机号" name="mobilephone">#}
+{#            </div>#}
+{#        </div>#}
+        <label class="layui-form-label"></label>
+        <div class="layui-form-mid" style="color: red">剩余信息请由账号所有者填充完整</div>
+        <div class="layui-form-item">
+            <div class="layui-input-block">
+                <button class="layui-btn" lay-filter="create" lay-submit>完成</button>
+            </div>
+        </div>
+    </div>
+</script>
+<script type="text/html" id="memberDetail">
+    <div class="layui-field-box">
+        <form class="layui-form">
+            <div class="layui-form-item">
+                <label class="layui-form-label">姓名</label>
+                <div class="layui-input-inline">
+                    <input class="layui-input" name="realname" readonly>
+                </div>
+                <label class="layui-form-label">学号</label>
+                <div class="layui-input-inline">
+                    <input class="layui-input" name="workid" readonly>
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">手机</label>
+                <div class="layui-input-inline">
+                    <input class="layui-input" name="mobilephone" readonly>
+                </div>
+                <label class="layui-form-label">微信</label>
+                <div class="layui-input-inline">
+                    <input class="layui-input" name="wechat" readonly>
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">QQ</label>
+                <div class="layui-input-inline">
+                    <input class="layui-input" name="qq" readonly>
+                </div>
+                <label class="layui-form-label">邮箱</label>
+                <div class="layui-input-inline">
+                    <input class="layui-input" name="email" readonly>
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">学院</label>
+                <div class="layui-input-inline">
+                    <input class="layui-input" name="school" readonly>
+                </div>
+                <label class="layui-form-label">班级</label>
+                <div class="layui-input-inline">
+                    <input class="layui-input" name="clazz" readonly>
+                </div>
+            </div>
+        </form>
+    </div>
+</script>
+<script type="text/javascript" src={% static "common/axios.min.js" %}></script>
+<script type="text/javascript" src={% static "common/vue.min.js" %}></script>
+<script type="text/javascript" src={% static "common/layui/layui.js" %}></script>
+<script type="text/javascript" src={% static "js/jquery-3.2.1.js" %}></script>
+<script>
+    var userid = {{ session_userId }};
+    console.log("用户ID：" + userid);
+</script>
+<script>
+    var schooladmin = {};
+    axios.post("/schoolAdmin/findSchoolAdminDetail/", {"userid": userid})
+        .then(function (response) {
+            if (response.data.success) {
+                schooladmin = response.data.schoolAdmin;
+            }
+        })
+        .catch(function (msg) {
+            console.log(msg);
+        })
+</script>
+<script>
+    layui.config({
+        base: "{% static 'js/layuiModulesEX/' %}"
+    }).use(['form', 'paging', 'layer', 'laytpl', 'element'], function () {
+        var form = layui.form,
+            layer = layui.layer,
+            paging = layui.paging(),
+            laytpl = layui.laytpl,
+            element = layui.element,
+            $ = layui.$;
+        laytpl.config({
+            open: '<%',
+            close: '%>'
+        });
+
+
+        var vm = new Vue({
+            el: "#Vue",
+            data: {},
+            methods: {
+                addone: function () {
+                    var addBoxIndex = -1;
+                    if (addBoxIndex !== -1) //说明
+                        return
+                    addBoxIndex = layer.open({
+                        type: 1,
+                        title: '创建院组织',
+                        // offset: ['100px', '20%'],
+                        area: ['70%', '70%'],
+                        content: $("#OrganizeTpl").html()
+                        , success: function (layero, index) {
+                            //创建学院监听
+                            form.on('submit(create)', function (data) {
+                                console.log(data);
+                                var organize = {
+                                    name: data.field.name,
+                                    universityid: schooladmin.universityid,
+                                    schoolid: schooladmin.schoolid,
+                                    introduce: $("textarea").val(),
+                                    type: null
+                                };
+                                axios.post("/organize/addOne/", {"organize": organize})
+                                    .then(function (response) {
+                                        console.log(response);
+                                        if (response.data.success) {
+                                            layer.msg(response.data.message, {icon: 1});
+                                            layer.close(index);
+                                            paging.init();
+                                        }
+                                        else {
+                                            layer.msg(response.data.message);
+                                        }
+                                    })
+                                    .catch(function (msg) {
+                                        console.log(msg);
+                                    });
+                                return false; //阻止表单跳转。如果需要表单跳转，去掉这段即可。
+                            });
+                            return false; //阻止表单跳转。如果需要表单跳转，去掉这段即可。
+                        }
+                        , end: function () {
+                            addBoxIndex = -1;
+                        }
+                    })
+                }
+            }
+        });
+
+        paging.init({
+            openWait: true,
+            url: '/organize/findByCondition/',
+            elem: "#content",
+            params: {
+                schoolid: schooladmin.schoolid,
+                universityid: 1
+            },
+            contentType: "application/json; charset=utf-8",
+            type: 'POST',
+            tempElem: '#tpl', //模块容器
+            pageConfig: { //分页参数配置
+                elem: '#paged', //分页容器
+                pageSize: 10 //分页大小
+            },
+            complate: function () {
+                element.init();
+                //绑定所有按钮事件
+                $('#content').children('tr').each(function () {
+                    var $that = $(this).children('td:last-child');
+                    var organizeId = $that.data('id');
+                    var $chairman = $(this).children("td:nth-child(2)");
+                    console.log(organizeId);
+
+                    $chairman.children("a[data-opt=chairman]").on('click', function () {
+                        viewStudentDetail($(this).data('id'));
+                    });
+
+                    $chairman.children("a[data-opt=changeChairman]").on('click', function () {
+                        console.log("指定主席");
+                        axios.post("/associateInfo/findMemberByIdentityForChangeChairman/", {
+                            organizeid: $(this).data('id'),
+                            identity: 3
+                        })
+                            .then(function (response) {
+                                console.log(response);
+                                var array = response.data.data;
+                                var html = '';
+                                for (var i in array) {
+                                    html += "<option value=" + array[i].associateInfo.id + ">" + array[i].user.realname + "(" + array[i].depart.name + ")" + "</option>"
+                                }
+                                console.log(html);
+                                layer.open({
+                                    type: 1,
+                                    title: "指定leader",
+                                    area: ["450px", "200px"],
+                                    content: $("#changeChairman").html(),
+                                    success: function () {
+                                        $("#selectChairman").append(html);
+                                        form.render('select');
+                                        form.on("submit(save)", function (data) {
+                                            console.log(data.field);
+                                            return false;
+                                        });
+                                    }
+                                })
+                            })
+                            .catch(function (msg) {
+                                console.log(msg);
+                            });
+                    });
+
+                    $chairman.children('a[data-opt=createChairman]').on('click', function () {
+                        layer.open({
+                            type: 1,
+                            area: ['400px', '350px'],
+                            content: $("#createChairman").html(),
+                            success: function (layero,index) {
+                                form.on("submit(create)", function (data) {
+                                    console.log(data);
+                                    var newUser = {
+                                        last_name: data.field.last_name,
+                                        username: data.field.username,
+                                        is_staff: 0,
+{#                                        mobilephone: data.field.mobilephone,#}
+                                        password: data.field.password
+                                    };
+                                    var associateInfo = {
+                                        organizeid: organizeId
+                                    };
+                                    axios.post("/user/addOneChairman/", {
+                                        newUser: newUser,
+                                        associateInfo: associateInfo
+                                    })
+                                        .then(function (response) {
+                                            console.log(response);
+                                            if (response.data.success) {
+                                                layer.msg(response.data.message, {icon: 1});
+                                                paging.init();
+                                                layer.close(index);
+                                            }
+                                            else {
+                                                layer.msg(response.data.message);
+                                            }
+                                        })
+                                        .catch(function (msg) {
+                                            console.log(msg);
+                                        })
+                                });
+                            }
+                        });
+                    });
+
+
+                    //查看按钮
+                    $that.find('a[data-opt=more]').on('click', function () {
+                        axios.post('/organize/findOneById/', {"id": organizeId})
+                            .then(function (response) {
+                                var organize = response.data.organize;
+                                var school = response.data.school;
+                                var university = response.data.university;
+                                console.log(organize);
+                                layer.open({
+                                    type: 1,
+                                    title: '院组织详情',
+                                    area: ['70%', '70%'],
+                                    content: $("#OrganizeTpl").html(),
+                                    shade: [0.5, "#FFF"],
+                                    btn: ['返回'],
+                                    end: function (layero, index) {
+                                        layer.close(index);
+                                    },
+                                    success: function (layero, index) {
+                                        $('#btn').hide();
+                                        $("form input[name=name]").val(organize.name).attr("disabled", true);
+                                        $("form textarea[name=intro]").val(organize.introduce).attr("disabled", true);
+                                    }
+                                })
+                            })
+                    });
+
+                    //修改按钮
+                    $that.find('a[data-opt=modify]').on('click', function () {
+                        axios.post('/organize/findOneById/', {"id": organizeId})
+                            .then(function (response) {
+                                var organize = response.data.organize;
+                                var school = response.data.school;
+                                var university = response.data.university;
+                                console.log(organize);
+                                layer.open({
+                                    type: 1,
+                                    title: '修改',
+                                    area: ['70%', '70%'],
+                                    content: $("#OrganizeTpl").html(),
+                                    shade: [0.5, "#FFF"],
+                                    btn: ['修改', '返回'],
+                                    yes: function (index, layero) {
+                                        var organize = {
+                                            id: organizeId,
+                                            name: $("form input[name=name]").val(),
+                                            intro: $("form textarea[name=intro]").val()
+                                        };
+                                        axios.post("/organize/modifyOneById/", {"organize": organize})
+                                            .then(function (res) {
+                                                if (res.data.success) {
+                                                    layer.msg(res.data.message, {icon: 1});
+                                                    paging.init();
+                                                    layer.close(index);
+                                                }
+                                            })
+                                            .catch(function (msg) {
+                                                console.log(msg);
+                                            })
+                                    },
+                                    end: function (layero, index) {
+                                        layer.close(index);
+                                    },
+                                    success: function (layero, index) {
+                                        $('#btn').hide();
+                                        $("form input[name=name]").val(organize.name);
+                                        $("form textarea[name=intro]").val(organize.introduce);
+                                    }
+                                })
+                            })
+                    });
+
+
+                    //解散按钮
+                    $that.find('a[data-opt=dismiss]').on('click', function () {
+                        layer.confirm('确认解散组织?', {icon: 5, title: '！！！'}, function (index) {
+                            axios.post('/organize/deleteOneById/', {"id": organizeId})
+                                .then(function (res) {
+                                    if (res.data.success) {
+                                        layer.msg(res.data.message, {icon: 1});
+                                        paging.init();
+                                        layer.close(index);
+                                    }
+                                })
+                                .catch(function (msg) {
+                                    console.log(msg);
+                                })
+
+                        });
+
+                    });
+
+
+                    //查看成员
+                    $that.find('a[data-opt=depart]').on('click', function () {
+                        var html1 = '/schoolAdmin/depart/' + organizeId;
+                        location.href = html1;
+                    })
+                })
+
+            }
+        })
+
+
+        var viewStudentDetail = function (userid) {
+            axios.post("/student/findStudentInfoDetail/", {userId: userid})
+                .then(function (response) {
+                    console.log(response);
+                    layer.open({
+                        type: 1,
+                        area: ["700px", "300px"],
+                        content: $("#memberDetail").html(),
+                        success: function () {
+                            $("form input[name=realname]").val(response.data.user.last_name);
+                            $("form input[name=workid]").val(response.data.studentInfo.workid);
+                            $("form input[name=mobilephone]").val(response.data.studentInfo.mobilephone);
+                            $("form input[name=wechat]").val(response.data.studentInfo.wechat);
+                            $("form input[name=qq]").val(response.data.studentInfo.qq);
+                            $("form input[name=email]").val(response.data.user.email);
+                            $("form input[name=school]").val(response.data.school.name);
+                            $("form input[name=clazz]").val(response.data.clazz.name);
+                        },
+                        end: function (index) {
+                        }
+                    });
+                })
+                .catch(function (msg) {
+                    console.log(msg);
+                });
+        };
+
+    })
+</script>
+</body>
+</html>

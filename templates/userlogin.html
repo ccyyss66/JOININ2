@@ -1,0 +1,91 @@
+{% load staticfiles %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>登录界面</title>
+    <link rel="stylesheet" type="text/css" href="{% static 'common/layui/css/layui.css' %}" media="all">
+    <link rel="stylesheet" type="text/css" href="{% static 'html/admin/css/login.css' %}">
+    <script language="JavaScript">
+        //禁止别的Iframe首页
+        if(top.location !== self.location){
+            top.location = self.location;
+        }
+    </script>
+</head>
+<body>
+<div class="layui-canvs"></div>
+<div class="layui-layout layui-layout-login">
+    <h1>
+        <strong>JOIN IN</strong>
+    </h1>
+    <form class="layui-form">
+        {% csrf_token %}
+        <div class="layui-form-item">
+            <div class="layui-user-icon larry-login">
+                <input class="login_txtbx" placeholder="账号" autocomplete="off" name="username"/>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <div class="layui-pwd-icon larry-login">
+                <input type="password" class="login_txtbx" placeholder="密码" autocomplete="off" name="password"/>
+            </div>
+        </div>
+{#        <div class="layui-form-item">#}
+{#            <div class="layui-val-icon larry-login">#}
+{#                <div class="layui-code-box">#}
+{#                    <input class="login_txtbx" placeholder="验证码" autocomplete="off" name="code" id="code" maxlength="4"/>#}
+{#                    <img src="" class="verifyImg" id="verifyImg">#}
+{#                </div>#}
+{#            </div>#}
+{#        </div>#}
+        <div class="layui-form-item">
+            <div class="layui-submit larry-login">
+                <input type="submit" value="立即登录" lay-filter="sub" lay-submit class="submit_btn"/>
+            </div>
+        </div>
+    </form>
+    <div class="layui-login-text">
+        <p>金融信息系统五菜鸡</p>
+        <div style="text-align: center">
+            <a href="/user/register" style="margin-right: 10%">注册</a>
+            <a href="" style="margin-left: 10%">忘记密码</a>
+        </div>
+    </div>
+</div>
+<script type="text/javascript" src="{% static 'js/jquery-3.2.1.js' %}"></script>
+<script type="text/javascript" src="{% static 'common/layui/layui.all.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/login.js' %}"></script>
+<script type="text/javascript" src="{% static 'html/admin/jsplug/jparticle.jquery.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/axios.min.js' %}"></script>
+<script>
+    $.ajaxSetup({
+        data:{csrfmiddlewaretoken:'{{  csrf_token }}'}
+    });
+</script>
+<script>
+    layui.use(['form'],function () {
+        var form = layui.form;
+
+        form.on("submit(sub)",function (data) {
+            console.log(data);
+            axios.post("/user/login/",{"user":data.field})
+                .then(function (response) {
+                    console.log(response.data);
+                    if(response.data.success){
+                        location.href=response.data.message;
+                    }
+                    else{
+                        layer.msg(response.data.message,{icon:2});
+                    }
+                })
+                .catch(function (msg) {
+                   console.log(msg);
+                });
+            return false;
+        });
+
+    });
+</script>
+</body>
+</html>

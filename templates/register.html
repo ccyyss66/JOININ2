@@ -1,0 +1,91 @@
+{% load staticfiles %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>学生注册</title>
+    <link rel="stylesheet" type="text/css" href="{% static 'html/admin/css/login.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'common/layui/css/layui.css' %}" media="all">
+</head>
+<body>
+    <div class="layui-layout layui-layout-login">
+    <h1>
+    <div class="layui-canvs"></div>
+    <strong>新用户注册</strong>
+    </h1>
+    <form class="layui-form">
+        {% csrf_token %}
+        <div class="layui-user-icon larry-login">
+            <input placeholder="请填写用户名" autocomplete="off" class="login_txtbx" name="username" lay-verify="required">
+        </div>
+        <div class="layui-user-icon larry-login">
+            <input placeholder="请填写姓名" autocomplete="off" class="login_txtbx" name="last_name" lay-verify="required">
+        </div>
+        <div class="layui-val-icon larry-login">
+            <input placeholder="请填写邮箱" autocomplete="off" class="login_txtbx" name="email" lay-verify="required">
+        </div>
+        <div class="layui-pwd-icon larry-login">
+            <input type="password" placeholder="请填写密码" autocomplete="off" class="login_txtbx" name="password"/>
+        </div>
+        <div class="layui-pwd-icon larry-login">
+            <input type="password" placeholder="重复密码" autocomplete="off" class="login_txtbx" name="repassword"/>
+        </div>
+        <div class="layui-form-item">
+            <div class="layui-input-block">
+                <input type="submit" lay-filter="sub" value="注册" class="layui-btn layui-btn-danger" lay-submit>
+                <input type="reset" value="重置" class="layui-btn">
+                <input type="button" value="返回" class="layui-btn" onclick=window.history.go(-1)>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script type="text/javascript" src="{% static 'js/jquery-3.2.1.js' %}"></script>
+<script type="text/javascript" src="{% static 'common/layui/layui.all.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/login.js' %}"></script>
+<script type="text/javascript" src="{% static 'html/admin/jsplug/jparticle.jquery.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/axios.min.js' %}"></script>
+<script>
+    $.ajaxSetup({
+        data:{csrfmiddlewaretoken:'{{ csrf_token }}'}
+    });
+</script>
+<script>
+    layui.use(['form','layer'],function () {
+        var form = layui.form,
+            layer = layui.layer,
+            $ = layui.$;
+
+            form.on("submit(sub)",function (data) {
+                if (data.field.password != data.field.repassword) {
+                    layer.msg("前后密码不一致",{icon:2});
+                }
+                else {
+                    data.field.is_superuser=0;
+                    data.field.is_staff = 0;
+                    data.field.is_active = 1;
+                    data.field.date_joined = new Date();
+                    console.log(data.field);
+                    axios.post("/user/userRegister/",{"newUser":data.field})
+                        .then(function (response) {
+                            if (response.data.success){
+                                layer.msg(response.data.message, {icon: 1,time:1000}, function () {
+                                    location.href=response.data.url;
+                                });
+                            }
+                            else {
+                                layer.msg(response.data.message,{icon:2});
+                            }
+                        })
+                        .catch(function (msg) {
+                            console.log(msg);
+                        });
+                }
+                return false;
+            });
+
+        form.render();
+        });
+</script>
+</body>
+</html>

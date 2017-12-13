@@ -1,0 +1,278 @@
+{% load staticfiles %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>学生个人信息</title>
+    <link rel="stylesheet" href={% static "common/layui/css/layui.css" %}/>
+    <link rel="stylesheet" href={% static "common/global.css" %}>
+    <script type="text/javascript" src={% static "common/vue.min.js" %}></script>
+</head>
+<body>
+<div id="content" v-cloak="">
+    <div class="admin-main">
+        <fieldset class="layui-elem-field layui-field-title">
+            <legend>个人信息</legend>
+        </fieldset>
+        <form class="layui-form">
+            <div class="layui-form-item">
+                <label class="layui-form-label">姓名</label>
+                <div class="layui-input-inline">
+                    <input type="text" name="last_name" class="layui-input" readOnly v-model ="user.last_name">
+                </div>
+                <label class="layui-form-label">学号</label>
+                <div class="layui-input-inline">
+                    <input type="text" name="workid" class="layui-input" readOnly v-model="studentinfo.workid">
+                </div>
+                <div v-show="show">
+                    <label class="layui-form-label">性别</label>
+                    <div class="layui-input-inline">
+                        <div v-if="studentinfo.sex == 1">
+                            <label class="layui-form-label" style="color: #999;text-align: center">男</label>
+                        </div>
+                        <div v-if="studentinfo.sex == 2">
+                            <label class="layui-form-label" style="color: #999;text-align: center">女</label>
+                        </div>
+                        <div v-if="studentinfo.sex!=1&&studentinfo.sex!=2">
+                            <label class="layui-form-label" style="color: #999;text-align: center">--</label>
+                        </div>
+                    </div>
+                </div>
+                <div v-show="!show" style="display: none">
+                    <label class="layui-form-label">性别</label>
+                    <div class="layui-input-inline">
+                        <input lay-filter="sex" type="radio" name="sex" value="1" title="男" v-model="studentinfo.sex">
+                        <input lay-filter="sex" type="radio" name="sex" value="2" title="女" v-model="studentinfo.sex">
+                    </div>
+                </div>
+            </div>
+
+            <div class="layui-form-item" v-show="show">
+                <label class="layui-form-label"><span style="color: red">*</span>所属院系</label>
+{#                <div class="layui-input-inline" style="width: 160px;">#}
+{#                    <input type="text"  class="layui-input" disabled>#}
+{#                </div>#}
+{#                <div class="layui-form-mid">-</div>#}
+                <div class="layui-input-inline" style="width: 160px;" >
+                    <input type="text"  class="layui-input" v-model="school.name" disabled>
+                </div>
+                <div class="layui-form-mid">-</div>
+                <div class="layui-input-inline" style="width: 160px;" >
+                    <input type="text"  class="layui-input" v-model="department.name" disabled>
+                </div>
+                <div class="layui-form-mid">-</div>
+                <div class="layui-input-inline" style="width: 160px;" >
+                    <input type="text"  class="layui-input" v-model="major.name" disabled>
+                </div>
+                <div class="layui-form-mid">-</div>
+                <div class="layui-input-inline" style="width: 160px;" >
+                    <input type="text"  class="layui-input" v-model="clazz.name" disabled>
+                </div>
+            </div>
+            <div class="layui-form-item" v-show="!show" style="display: none">
+                <label class="layui-form-label">所属院系</label>
+                <div class="layui-input-inline">
+                    <select name="school" lay-filter="school" lay-search>
+                        <option value="">选择学院</option>
+                    </select>
+                </div>
+                <div class="layui-form-mid">-</div>
+                <div class="layui-input-inline">
+                    <select name="department" lay-filter="department" lay-search>
+                        <option value="">选择系</option>
+                    </select>
+                </div>
+                <div class="layui-form-mid">-</div>
+                <div class="layui-input-inline">
+                    <select name="major" lay-filter="major" lay-search>
+                        <option value="">选择专业</option>
+                    </select>
+                </div>
+                <div class="layui-form-mid">-</div>
+                <div class="layui-input-inline">
+                    <select name="clazz" lay-filter="clazz" lay-search>
+                        <option value="">选择班级</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="layui-form-item">
+                <label class="layui-form-label"><span style="color: red">*</span>手机</label>
+                <div class="layui-input-inline">
+                    <input type="tel" name="mobilephone" lay-verify="phone" autocomplete="off" class="layui-input" v-model="studentinfo.mobilephone" readOnly>
+                </div>
+                <label class="layui-form-label">微信</label>
+                <div class="layui-input-inline">
+                    <input type="text" name="wechat" autocomplete="off" class="layui-input" v-model="studentinfo.wechat" readOnly>
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">QQ</label>
+                <div class="layui-input-inline">
+                    <input type="text" name="qq" autocomplete="off" class="layui-input" v-model="studentinfo.qq" readOnly>
+                </div>
+                <label class="layui-form-label"><span style="color: red">*</span>电子邮箱</label>
+                <div class="layui-input-inline">
+                    <input type="text" name="email" lay-verify="email" autocomplete="off" class="layui-input" v-model="user.email" readOnly>
+                </div>
+            </div>
+
+            <div class="layui-form-item">
+                <div class="layui-input-block" v-show="show">
+                    <input type="button" lay-filter="edit" class="layui-btn" @click="update" value="修改">
+                </div>
+                <div class="layui-input-block" v-show="!show" style="display: none">
+                    <button class="layui-btn" lay-filter="save" lay-submit>提交</button>
+                    <input type="button" class="layui-btn" @click="back" value="返回">
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+<script type="text/javascript" src={% static "common/axios.min.js" %}></script>
+<script type="text/javascript" src={% static "common/layui/layui.js" %}></script>
+<script>
+    var userid = {{ session_userId }};
+    layui.use(['form'],function () {
+        var form = layui.form,
+            $ = layui.$;
+
+        var linkage = {};
+        linkage.formRender = function (obj,tip) {
+            $(obj).empty();
+            $(obj).append("<option value=''>"+tip+"</option>");
+            form.render('select');
+        };
+        linkage.read = function (obj,url,paramid,initid) {
+            axios.post(url,{id:paramid})
+                .then(function (response) {
+                    var array = response.data.data;
+                    var html = '';
+                    for(var i in array){
+                        html += '<option value='+ array[i].id + '>' + array[i].name + '<option>';
+                    }
+                    $(obj).append(html);
+                    form.render('select');
+                    if(initid){
+                        $(obj).next().find('[lay-value="'+ initid + '"]').click();
+                    }
+                })
+                .catch(function (msg) {
+                    console.log(msg);
+                });
+        };
+
+        var vm = new Vue({
+            el:"#content",
+            data:{
+                show:true,
+                studentinfo:{
+                },
+                user:{},
+                clazz:{},
+                department:{},
+                major:{},
+                school:{}
+            },
+            methods:{
+                update:function () {
+                    form.render('radio');
+                    $("form input[type!=button]").attr("readOnly",false).removeClass("disabled");
+                    vm.show = false;
+                },
+                back:function () {
+                    $("form input[type!=button]").attr("readOnly",true);
+                    vm.show = true;
+                }
+            }
+        });
+
+        var school = 'form select[name=school]',
+            department = 'form select[name=department]',
+            major = 'form select[name=major]',
+            clazz = 'form select[name=clazz]';
+
+        axios.post("/student/findStudentInfoDetail/",{userId:userid})
+            .then(function (response) {
+                console.log(response);
+                vm.user = response.data.user;
+                vm.studentinfo = response.data.studentInfo;
+                vm.clazz = response.data.clazz;
+                vm.major = response.data.major;
+                vm.department = response.data.department;
+                vm.school = response.data.school;
+                if($(school).length){
+            linkage.formRender(school,"选择学院");
+            linkage.read(school,"/school/findByUniversityid/",1,vm.studentinfo.schoolid);
+            if($(department).length){
+                form.on('select(school)',function (data) {
+                    linkage.formRender(department,"选择系");
+                    linkage.formRender(clazz,"选择班级");
+                    linkage.read(department,"/department/findBySchoolId/",data.value,vm.studentinfo.departmentid);
+                });
+                if($(major).length){
+                    form.on('select(department)',function (data) {
+                        linkage.formRender(major,"选择专业");
+                        linkage.formRender(clazz,"选择班级");
+                        linkage.read(major,"/major/findByDepartmentId/",data.value,vm.studentinfo.majorid);
+                    });
+                    if($(clazz).length){
+                        form.on('select(major)',function (data) {
+                            linkage.formRender(clazz,"选择班级");
+                            linkage.read(clazz,"/clazz/findByMajorId/",data.value,vm.studentinfo.classid);
+                        });
+                    }
+                }
+            }
+        }
+            })
+            .catch(function (msg) {
+                console.log(msg);
+            });
+
+        form.on("radio(sex)",function (data) {
+            vm.studentinfo.sex = data.value;
+        });
+
+        form.on("submit(save)",function (data) {
+             var user = {
+                 id:vm.user.id,
+                 last_name:data.field.last_name,
+                 email:data.field.email
+             };
+             console.log(user);
+             var studentInfo = {
+                 id:vm.studentinfo.id,
+                 workid:data.field.workid,
+                 sex:vm.studentinfo.sex,
+                 mobilephone:data.field.mobilephone,
+                 wechat:data.field.wechat,
+                 qq:data.field.qq,
+                 universityid:1,
+                 schoolid:data.field.school,
+                 departmentid:data.field.department,
+                 majorid:data.field.major,
+                 classid:data.field.clazz,
+                 interest:""
+             };
+             axios.post("/student/modifyStudentInfoDetail/",{user:user,studentinfo:studentInfo})
+                 .then(function (response) {
+                     if(response.data.success){
+                         layer.msg(response.data.message,{icon:1},function () {
+                             location.reload();
+                             vm.show = true;
+                         });
+                     }
+                     else{
+                         layer.msg(response.data.message);
+                     }
+                 })
+                 .catch(function (msg) {
+                     console.log(msg);
+                 });
+             return false;
+        });
+    });
+</script>
+</html>

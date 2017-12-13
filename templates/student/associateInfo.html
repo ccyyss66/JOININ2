@@ -1,0 +1,496 @@
+{% load staticfiles %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>组织查看</title>
+    <link rel="stylesheet" href={% static "common/layui/css/layui.css" %}/>
+    <link rel="stylesheet" href={% static "common/global.css" %}>
+</head>
+<body>
+<div class="admin-main" id="Vue">
+    <div v-show="show">
+        <blockquote class="layui-elem-quote">
+            <button type="button" class="layui-btn layui-btn-small" onclick="window.location.reload()"><i class="layui-icon">&#x1002;</i> 刷新</button>
+            <button type="button" class="layui-btn layui-btn-small" @click="universityOrganize">校级组织</button>
+            <button type="button" class="layui-btn layui-btn-small" @click="schoolOrganize">院级组织</button>
+        </blockquote>
+        <fieldset class="layui-elem-field">
+            <legend>组织信息</legend>
+            <div class="layui-field-box layui-form">
+                <table class="layui-table admin-table">
+                    <thead>
+                    <tr>
+                        <th>组织名称</th>
+                        <th>组织介绍</th>
+                        <th>操作</th>
+                    </tr>
+                    </thead>
+                    <tbody id="content">
+                    </tbody>
+                </table>
+            </div>
+        </fieldset>
+        <div class="admin-table-page">
+            <div id="paged" class="page">
+            </div>
+        </div>
+    </div>
+
+    <div v-show="show_depart" style="display: none">
+        <blockquote class="layui-elem-quote">
+            <button type="button" class="layui-btn layui-btn-small" @click="reloadToOrganize">返回</button>
+        </blockquote>
+        <fieldset class="layui-elem-field">
+            <legend>部门信息</legend>
+            <form class="layui-field-box layui-form">
+            {% csrf_token %}
+                <table class="layui-table admin-table">
+                    <thead>
+                    <tr>
+                        <th>名称</th>
+{#                        <th>身份</th>#}
+{#                        <th>联系方式</th>#}
+                        <th>操作</th>
+                    </tr>
+                    </thead>
+                    <tbody id="content_depart">
+                    </tbody>
+                </table>
+            </form>
+        </fieldset>
+        <div class="admin-table-page">
+            <div id="paged_depart" class="page"></div>
+        </div>
+    </div>
+
+    <div v-show="show_member" style="display: none">
+        <blockquote class="layui-elem-quote">
+            <button type="button" class="layui-btn layui-btn-small" @click="reloadToDepart">返回</button>
+        </blockquote>
+        <fieldset class="layui-elem-field">
+            <legend>成员信息</legend>
+            <form class="layui-field-box layui-form">
+            {% csrf_token %}
+                <table class="layui-table admin-table">
+                    <thead>
+                    <tr>
+                        <th>姓名</th>
+                        <th>身份</th>
+                        <th>联系方式</th>
+                        <th>操作</th>
+                    </tr>
+                    </thead>
+                    <tbody id="content_member">
+                    </tbody>
+                </table>
+            </form>
+        </fieldset>
+        <div class="admin-table-page">
+            <div id="paged_member" class="page"></div>
+        </div>
+    </div>
+</div>
+<script type="text/html" id="tpl">
+    <%# layui.each(d.data,function(index,item){ %>
+    <tr>
+        <td><% item.organize.name %></td>
+        <td><% getSimple20(item.organize.introduce) %></td>
+        <td>
+            <a class="layui-btn layui-btn-mini" data-opt="viewDeparts" data-id="<% item.organize.id %>">查看部门</a>
+        </td>
+    </tr>
+    <%# }); %>
+</script>
+<script type="text/html" id="depart_tpl">
+    <%# layui.each(d.data,function(index,item){ %>
+    <tr>
+        <td><% item.organizeDepart.name || "--" %></td>
+        <td>
+            <%# if(item.isJoininThisOraganize==2){ %>
+            <a class="layui-btn layui-btn-mini" data-opt="viewMembers" data-id="<% item.organizeDepart.id %>">查看成员</a>
+            <%# } %>
+            <%# if(!item.isJoininThisOraganize){ %>
+            <a class="layui-btn layui-btn-mini layui-btn-normal" data-opt="applyJoinin" data-id="<% item.organizeDepart.id %>">申请加入</a>
+            <%# } %>
+            <a class="layui-btn layui-btn-mini layui-btn-primary" data-opt="viewDetail" data-id="<% item.organizeDepart.id %>">查看详情</a>
+        </td>
+    </tr>
+    <%# }); %>
+</script>
+<script type="text/html" id="member_tpl">
+    <%# layui.each(d.data,function(index,item){ %>
+    <tr>
+        <td><% item.user.last_name || "--" %></td>
+        <td>
+            <%# if(item.associateInfo.identity==null){ %>
+            N/A
+            <%# } %>
+            <%# if(item.associateInfo.identity==1){ %>
+            主席/会长
+            <%# } %>
+            <%# if(item.associateInfo.identity==2){ %>
+            副主席/主任
+            <%# } %>
+            <%# if(item.associateInfo.identity==3){ %>
+            部长
+            <%# } %>
+            <%# if(item.associateInfo.identity==4){ %>
+            干事
+            <%# } %>
+        </td>
+        <td><% item.studentinfo.mobilephone || "--" %></td>
+        <td>
+            <%# if(item.currentUserIdentity == 1&&item.associateInfo.identity!=3){ %>
+            <a class="layui-btn layui-btn-mini layui-btn-normal" data-opt="updateIdentityToSir" data-id="<% item.associateInfo.id %>">任命部长</a>
+            <%# } %>
+            <%# if(item.currentUserIdentity == 3){ %>
+                <%# if(item.associateInfo.state == 1){ %>
+                <a class="layui-btn layui-btn-mini layui-btn-normal" data-opt="sendMessage">发送面试通知</a>
+                <a class="layui-btn layui-btn-mini" data-opt="accept" data-id="<% item.associateInfo.id %>">接受</a>
+                <%# } %>
+            <a class="layui-btn layui-btn-mini layui-btn-danger" data-opt="refuse" data-id="<% item.associateInfo.id %>">拒绝/除名</a>
+            <%# } %>
+            <a class="layui-btn layui-btn-mini layui-btn-primary" data-opt="detail" data-id="<% item.user.id %>">详情</a>
+        </td>
+    </tr>
+    <%# }); %>
+</script>
+<script type="text/html" id="memberDetail">
+<form class="layui-form">
+    <div class="layui-form-item">
+        <label class="layui-form-label">姓名</label>
+        <div class="layui-input-inline">
+            <input class="layui-input" name="realname" readonly>
+        </div>
+        <label class="layui-form-label">学号</label>
+        <div class="layui-input-inline">
+            <input class="layui-input" name="workid" readonly>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">手机</label>
+        <div class="layui-input-inline">
+            <input class="layui-input" name="mobilephone" readonly>
+        </div>
+        <label class="layui-form-label">微信</label>
+        <div class="layui-input-inline">
+            <input class="layui-input" name="wechat" readonly>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">QQ</label>
+        <div class="layui-input-inline">
+            <input class="layui-input" name="qq" readonly>
+        </div>
+        <label class="layui-form-label">邮箱</label>
+        <div class="layui-input-inline">
+            <input class="layui-input" name="email" readonly>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">学院</label>
+        <div class="layui-input-inline">
+            <input class="layui-input" name="school" readonly>
+        </div>
+        <label class="layui-form-label">班级</label>
+        <div class="layui-input-inline">
+            <input class="layui-input" name="clazz" readonly>
+        </div>
+    </div>
+</form>
+</script>
+<script type="text/javascript" src={% static "common/vue.min.js" %}></script>
+<script type="text/javascript" src={% static "common/axios.min.js" %}></script>
+<script type="text/javascript" src={% static "common/layui/layui.js" %}></script>
+<script type="text/javascript" src={% static "js/jquery-3.2.1.js" %}></script>
+<script>
+    var userid = {{ session_userId }};
+    var studentInfoDetail = {};
+    axios.post("/student/findStudentInfoDetail/",{"userId":userid})
+        .then(function (response) {
+            studentInfoDetail.clazz = response.data.clazz;
+            studentInfoDetail.department = response.data.department;
+            studentInfoDetail.major = response.data.major;
+            studentInfoDetail.studentInfo = response.data.studentInfo;
+            studentInfoDetail.user = response.data.user;
+        })
+        .catch(function (msg) {
+            console.log(msg);
+        })
+</script>
+<script>
+    var getSimple20 = function (str) {
+        if(str.length>20){
+            return str.substring(0,20);
+        }
+        else{
+            return str;
+        }
+    };
+    layui.config({
+        base:"{% static 'js/layuiModulesEX/' %}",
+    }).use(['form','paging','layer','laytpl'],function () {
+        var form = layui.form,
+            layer = layui.layer,
+            paging = layui.paging(),
+            laytpl = layui.laytpl,
+            $ = layui.$;
+        laytpl.config({
+            open: '<%',
+            close: '%>'
+        });
+
+        var vm = new Vue({
+            el:"#Vue",
+            data:{
+                show:true,
+                show_depart:false,
+                show_member:false,
+                currentOrganizeid:""
+            },
+            methods:{
+                reloadToDepart:function () {
+                    vm.show_member = false;
+                    vm.show = false;
+                    vm.show_depart=true;
+                },
+                reloadToOrganize:function () {
+                    vm.show_member = false;
+                    vm.show = true;
+                    vm.show_depart=false;
+                },
+                universityOrganize:function () {
+                    paging_init(1,-1);
+                },
+                schoolOrganize:function () {
+                    paging_init(1,studentInfoDetail.studentInfo.schoolid);
+                }
+            }
+        });
+
+        var paging_init = function (universityid,schoolid) {
+            paging.init({
+                openWait: true,
+                url: '/organize/findByConditionBySt/',
+                elem: "#content",
+                params: {
+                    universityid:universityid,
+                    schoolid:schoolid
+                },
+                contentType: "application/json; charset=utf-8",
+                type: 'POST',
+                tempElem: '#tpl', //模块容器
+                pageConfig: { //分页参数配置
+                    elem: '#paged', //分页容器
+                    pageSize: 10 //分页大小
+                },
+                success:function () {
+{#                    alert("渲染成功");#}
+                },
+                fail:function () {
+                },
+                complate:function () {
+                    $("#content").children('tr').each(function () {
+                        var $that = $(this).children('td:last-child');
+                        var organizeid =  $that.children('a[data-opt=viewDeparts]').data('id')
+
+                        $that.children('a[data-opt=viewDeparts]').on('click',function () {
+                            vm.currentOrganizeid = organizeid;
+                            paging_depart(organizeid);
+                            vm.show = false;
+                            vm.show_depart = true;
+                            vm.show_member = false;
+                        });
+                    });
+                }
+            })
+        };
+        var paging_depart = function (organizeid) {
+            paging.init({
+                url:"/organizeDepart/findByOrganizeid/",
+                elem:"#content_depart",
+                params:{
+                    organizeid:organizeid
+                },
+                contentType : "application/json; charset=utf-8",
+                type: 'POST',
+                tempElem: '#depart_tpl', //模块容器
+                pageConfig: { //分页参数配置
+                    elem: 'paged_depart', //分页容器
+                    pageSize:10 //分页大小
+                },
+                success:function () {
+    //                alert('渲染成功');
+                },
+                fail:function (msg) {
+    //                alert('获取数据失败');
+                },
+                complate:function () {
+    //                alert("处理完成");
+                    $("#content_depart").children('tr').each(function () {
+                        var $that = $(this).children('td:last-child');
+                        var departid = $that.children('a[data-opt=viewDetail]').data('id');
+
+                        $that.children('a[data-opt=viewMembers]').on('click',function () {
+                            paging_member(departid);
+                            vm.show = false;
+                            vm.show_depart = false;
+                            vm.show_member = true;
+                        });
+
+                        $that.children('a[data-opt=applyJoinin]').on('click',function () {
+                        var associateInfo = {
+                            sno:studentInfoDetail.studentInfo.id,
+                            organizeid:organizeid,
+                            organizedepartid:departid,
+                            state:1,
+                            identity:null,
+                            auditsug:""
+                        };
+                        axios.post("/associateInfo/addOne/",{"associateInfo":associateInfo})
+                            .then(function (response) {
+                                console.log(response);
+                                if(response.data.success){
+                                    layer.msg("已成功提交申请",{icon:1});
+                                    paging_depart(organizeid);
+                                }
+                                else{
+                                    layer.msg("哪凉快待哪",{icon:2});
+                                }
+                            })
+                            .catch(function (msg) {
+                                console.log(msg);
+                            });
+                    });
+
+                        $that.children('a[data-opt=viewDetail]').on('click',function (){
+                            console.log("查看组织详情");
+                        });
+                    });
+                }
+            });
+        };
+        var paging_member = function (organizedepartid) {
+            paging.init({
+                url:"/associateInfo/findMembersByOrganizeDepartid/",
+                elem:"#content_member",
+                params:{
+                    organizeDepartid:organizedepartid,
+                    organizeid:vm.currentOrganizeid
+                },
+                contentType : "application/json; charset=utf-8",
+                type: 'POST',
+                tempElem: '#member_tpl', //模块容器
+                pageConfig: { //分页参数配置
+                    elem: 'paged_member', //分页容器
+                    pageSize:10 //分页大小
+                },
+                success:function () {
+    //                alert('渲染成功');
+                },
+                fail:function (msg) {
+    //                alert('获取数据失败');
+                },
+                complate:function () {
+    //                alert("处理完成");
+                    $("#content_member").children('tr').each(function () {
+                        var $that = $(this).children("td:last-child");
+                        var userid = $that.children("a[data-opt=detail]").data("id");
+                        $that.children("a[data-opt=detail]").on('click',function () {
+                            axios.post("/student/findStudentInfoDetail/",{userId:userid})
+                                .then(function (response) {
+                                    console.log(response);
+                                    layer.open({
+                                        type:1,
+                                        area:["700px","300px"],
+                                        content:$("#memberDetail").html(),
+                                        success:function () {
+                                            $("form input[name=realname]").val(response.data.user.last_name);
+                                            $("form input[name=workid]").val(response.data.studentinfo.workid);
+                                            $("form input[name=mobilephone]").val(response.data.studentinfo.mobilephone);
+                                            $("form input[name=wechat]").val(response.data.studentinfo.wechat);
+                                            $("form input[name=qq]").val(response.data.studentinfo.qq);
+                                            $("form input[name=email]").val(response.data.user.email);
+                                            $("form input[name=school]").val(response.data.school.name);
+                                            $("form input[name=clazz]").val(response.data.clazz.name);
+                                        },
+                                        end:function (index) {}
+                                    });
+                                })
+                                .catch(function (msg) {
+                                    console.log(msg);
+                                });
+                        });
+
+                        $that.children("a[data-opt=sendMessage]").on('click',function () {
+                            layer.msg("只是设想，功能待开发");
+                        });
+
+                        $that.children("a[data-opt=accept]").on('click',function () {
+                            console.log("接受该成员");
+                            axios.post("/associateInfo/updateStateById/",{id:$(this).data('id'),state:2})
+                                .then(function (response) {
+                                    console.log(response);
+                                    if(response.data.success){
+                                        layer.msg("操作成功",{icon:1});
+                                        paging_member(organizedepartid);
+                                    }
+                                    else{
+                                        layer.msg("请重试");
+                                    }
+                                })
+                                .catch(function (msg) {
+                                    console.log(msg);
+                                });
+                        });
+
+                        $that.children("a[data-opt=sendMessage]").on('click',function () {
+                            console.log("拒绝除名该成员");
+                            layer.confirm("确认删除/拒绝吗?",function () {
+                                axios.post("/associateInfo/deleteById/",{id:$(this).data('id')})
+                                .then(function (response) {
+                                    console.log(response);
+                                     if(response.data.success){
+                                        layer.msg("操作成功",{icon:1});
+                                        paging_member(organizedepartid);
+                                    }
+                                    else{
+                                        layer.msg("请重试");
+                                    }
+                                })
+                                .catch(function (msg) {
+                                    console.log(msg);
+                                });
+                            });
+                        });
+
+                        $that.children("a[data-opt=updateIdentityToSir]").on('click',function () {
+                            var assoid = $(this).data('id');
+                            console.log($(this).data('id'));
+                            layer.confirm("确定吗?",function () {
+                                  axios.post("/associateInfo/updateIdentityById/",{id:assoid,identity:3})
+                                      .then(function (response) {
+                                          console.log(response);
+                                          if(response.data.success){
+                                              layer.msg("任命成功",{icon:1},function () {
+                                                  paging_member(organizedepartid);
+                                              });
+                                          }
+                                          else{
+                                              layer.msg("请重试",{icon:2});
+                                          }
+                                      })
+                                      .catch(function (msg) {
+                                          console.log(msg);
+                                      });
+                            });
+                        });
+                    });
+                }
+            });
+        };
+    });
+</script>
+</body>
+</html>

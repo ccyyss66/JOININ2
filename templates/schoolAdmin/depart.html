@@ -1,0 +1,190 @@
+{% load staticfiles %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" href={% static "common/layui/css/layui.css" %}/>
+    <link rel="stylesheet" href={% static "common/global.css" %}>
+    <script type="text/javascript" src={% static "common/axios.min.js" %}></script>
+</head>
+<body>
+<div class="admin-main" id="Vue">
+ <blockquote class="layui-elem-quote">
+            <button type="button" class="layui-btn layui-btn-small" @click="reloadToOrganize"><i class="layui-icon">&#xe65c;</i>返回</button>
+            <button type="button" class="layui-btn layui-btn-small layui-btn-normal" @click="addDepart"> <i class="layui-icon">&#xe608;</i>新增</button>
+        </blockquote>
+        <fieldset class="layui-elem-field">
+            <legend>部门信息</legend>
+            <form class="layui-field-box layui-form">
+            {% csrf_token %}
+                <table class="layui-table admin-table">
+                    <thead>
+                    <tr>
+                        <th>名称</th>
+                        <th>操作</th>
+                    </tr>
+                    </thead>
+                    <tbody id="content_depart">
+                    </tbody>
+                </table>
+            </form>
+        </fieldset>
+        <div class="admin-table-page">
+            <div id="paged_depart" class="page"></div>
+        </div>
+    </div>
+<script type="text/html" id="addDepartTpl">
+<div class="admin-main">
+    <div id="school">
+        <fieldset class="layui-elem-field">
+            <legend>新增部门</legend>
+            <div class="layui-field-box">
+                <form class="layui-form">
+                    {% csrf_token %}
+                    <div class="layui-form-item">
+                        <div class="layui-inline">
+                            <label class="layui-form-label">名称：</label>
+                            <div class="layui-input-inline">
+                                <input name="name" placeholder="请输入名称" class="layui-input" autocomplete="off">
+                            </div>
+                            <button lay-filter="create" class="layui-btn" lay-submit>创建</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </fieldset>
+    </div>
+</div>
+</script>
+{#查看部门信息#}
+<script type="text/html" id="depart_tpl">
+    <%# layui.each(d.data,function(index,item){ %>
+    <tr>
+        <td><% item.organizeDepart.name || "--" %></td>
+        <td>
+            <a class="layui-btn layui-btn-mini layui-btn-normal" data-opt="viewMembers" data-id="<% item.organizeDepart.id %>">查看成员</a>
+            <a class="layui-btn layui-btn-mini " data-opt="rename" data-id="<% item.organizeDepart.id %>">重命名</a>
+            <a class="layui-btn layui-btn-mini layui-btn-danger" data-opt="delete" data-id="<% item.organizeDepart.id %>">删除部门</a>
+        </td>
+    </tr>
+    <%# }); %>
+</script>
+<script type="text/javascript" src={% static "common/vue.min.js" %}></script>
+<script type="text/javascript" src={% static "common/layui/layui.js" %}></script>
+<script type="text/javascript" src={% static "js/jquery-3.2.1.js" %}></script>
+<script>
+    var organizeid = {{ organized_id }};
+</script>
+<script>
+    layui.config({
+        base:"{% static 'js/layuiModulesEX/' %}"
+    }).use(['form','paging','layer','laytpl'],function () {
+        var form = layui.form,
+            layer = layui.layer,
+            laytpl = layui.laytpl,
+            paging = layui.paging(),
+            $ = layui.$;
+        laytpl.config({
+            open: '<%',
+            close: '%>'
+        });
+            var vm = new Vue({
+            el: "#Vue",
+            data: {
+
+            },
+            methods:{
+                reloadToOrganize:function () {
+                    location.href ='/schoolAdmin/organized/';
+                },
+                addDepart:function () {
+                    var addBoxIndex = -1;
+                    if (addBoxIndex !== -1) //说明
+                        return
+                    addBoxIndex = layer.open({
+                        type: 1,
+                        title: '新增部门',
+                        // offset: ['100px', '20%'],
+                        area: ['55%', '40%'],
+                        content:$("#addDepartTpl").html()
+                        , success: function (layero, index) {
+                            //创建监听
+                            form.on('submit(create)', function (data) {
+                                var organizeDepart = {
+                                    name:data.field.name,
+                                    organizeid:organizeid
+                                };
+                                axios.post("/organizeDepart/addOne/",{"organizeDepart":organizeDepart})
+                                    .then(function (response) {
+                                        if(response.data.success){
+                                            layer.msg(response.data.message,{icon:1});
+                                            layer.close(index);
+                                            paging.init();
+                                        }
+                                        else{
+                                            layer.msg(response.data.message);
+                                        }
+                                    })
+                                    .catch(function (msg) {
+                                        console.log(msg);
+                                    });
+                                return false; //阻止表单跳转。如果需要表单跳转，去掉这段即可。
+                            });
+                            return false; //阻止表单跳转。如果需要表单跳转，去掉这段即可。
+                        }
+                        , end: function () {
+                            addBoxIndex = -1;
+                        }
+                    });
+                }
+
+                    }
+        });
+
+            paging.init({
+                url:"/organizeDepart/findByOrganizeid/",
+                elem:"#content_depart",
+                params:{
+                    organizeid:organizeid
+                },
+                contentType : "application/json; charset=utf-8",
+                type: 'POST',
+                tempElem: '#depart_tpl', //模块容器
+                pageConfig: { //分页参数配置
+                    elem: 'paged_depart', //分页容器
+                    pageSize:10 //分页大小
+                },
+                success:function () {
+    //                alert('渲染成功');
+                },
+                fail:function (msg) {
+    //                alert('获取数据失败');
+                },
+                complate:function () {
+    //                alert("处理完成");
+                    $("#content_depart").children('tr').each(function () {
+                        var $that = $(this).children('td:last-child');
+                        var departid = $that.children('a[data-opt=viewMembers]').data('id');
+
+                        $that.children('a[data-opt=viewMembers]').on('click',function () {
+                             html='/schoolAdmin/viewMates/'+departid;
+                            console.log(html);
+                            location.href=html;
+                        });
+
+                        $that.children('a[data-opt=rename]').on('click',function () {
+                            layer.msg("此功能暂未开放");
+                        });
+
+                        $that.children('a[data-opt=delete]').on('click',function () {
+                            layer.msg("此功能暂未开放");
+                        });
+                    });
+                }
+            });
+        });
+
+</script>
+</body>
+</html>
