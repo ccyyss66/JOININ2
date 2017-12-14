@@ -7,8 +7,39 @@
     <link rel="stylesheet" href={% static "common/layui/css/layui.css" %}/>
     <link rel="stylesheet" href={% static "common/global.css" %}>
     <script type="text/javascript" src={% static "common/axios.min.js" %}></script>
+    <style>
+     .real:hover{
+         opacity: 0.6;
+     }
+     #mo{
+         display: none;/*隐藏*/
+         width: 100%;
+         height: 100%;
+         position: fixed;
+         overflow: auto;
+         background-color: rgba(0,0,0,0.7);
+         top: 0px;
+         left: 0px;
+         z-index: 999999999999;
+     }
+     #moimg{
+         display: block;
+         margin:10% auto;
+         width: 60%;
+         max-width: 750px;
+     }
+     @media only screen and(max-width:750px ) {
+      #moimg{
+          width: 100%;
+      }
+    }
+    </style>
 </head>
 <body>
+<!--图片模态框 -->
+<div class="motai" id="mo">
+  <img class="motaiimg" id="moimg">
+</div>
 <div class="admin-main" id="Vue">
     <blockquote class="layui-elem-quote">
         <button type="button" class="layui-btn layui-btn-mini" onclick="window.location.reload()">刷新</button>
@@ -118,7 +149,7 @@
             <div class="layui-form-item">
                 <label class="layui-form-label">活动场地</label>
                 <div class="layui-input-block">
-                    <img id="picture" style="height: 100px;width: 100px;overflow:hidden"/>
+                    <img id="picture" class="real" style="height: 100px;width: 100px;overflow:hidden"/>
                 </div>
             </div>
             <div class="layui-form-item" id="check" style="float: right">
@@ -214,7 +245,16 @@
                                             form.on('submit(reload)',function () {
                                                 console.log("返回");
                                                 layer.close(index);
-                                            })
+                                            });
+                                            var motai=$('#mo');
+                                            var moimg=$("#moimg");
+                                            $("#picture").on('click',function(){
+                                                motai[0].style.display="block";
+                                                moimg[0].src=this.src
+                                            });
+                                            moimg.on('click',function(){
+                                                motai[0].style.display="none";
+                                            });
                                         },
                                         end: function () {
                                         }
@@ -264,7 +304,7 @@
                                             form.on('submit(reload)',function () {
                                                 console.log("返回");
                                                 layer.close(index);
-                                            })
+                                            });
 
                                             //通过按钮
                                             form.on('submit(pass)',function () {
@@ -309,7 +349,16 @@
                                                         console.log(msg);
                                                     })
                                                 })
-                                            })
+                                            });
+                                            var motai=$('#mo');
+                                            var moimg=$("#moimg");
+                                            $("#picture").on('click',function(){
+                                                motai[0].style.display="block";
+                                                moimg[0].src=this.src
+                                            });
+                                            moimg.on('click',function(){
+                                                motai[0].style.display="none";
+                                            });
                                         },
                                         end: function () {
                                         }

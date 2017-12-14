@@ -57,7 +57,7 @@
                     <button type="button" name="activity" id="activity" class="layui-btn">
                         <i class="layui-icon">&#xe67c;</i>上传图片
                     </button>
-                    <img id="showActivity" style="height: 100px;width: 100px;overflow: hidden">
+                    <img id="showActivity" class="real" style="height: 100px;width: 100px;overflow: hidden">
                 </div>
                 </div>
                 <div class="layui-form-item">
@@ -124,14 +124,20 @@
             .catch(function (res) {
                 console.log(res);
             });
-
-
-
         laydate.render({
             elem: "#start"
         });
         laydate.render({
             elem: "#end"
+        });
+        var motai=$('#mo');
+        var moimg=$("#moimg");
+        $("#showActivity").on('click',function(){
+            motai[0].style.display="block";
+            moimg[0].src=this.src
+        });
+        moimg.on('click',function(){
+            motai[0].style.display="none";
         });
     });
 </script>
