@@ -1,11 +1,11 @@
 var navs = [{
     "title":"个人信息",
-    "icon":"fa-address-book",
+    "icon":"fa-user-circle",
     "spread":false,
     "href":"/student/personalInfo"
 },{
     "title":"发布信息",
-    "icon":"fa-address-book",
+    "icon":"fa-bullhorn",
     "spread":false,
     "href":"/student/publishinformation"
 },{
@@ -15,7 +15,7 @@ var navs = [{
     "href":"/student/viewinformation"
 },{
     "title":"社团管理",
-    "icon":"fa-address-book",
+    "icon":"fa-futbol-o",
     "spread":false,
     "href":"/student/associateInfo"
 }

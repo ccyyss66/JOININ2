@@ -1,6 +1,6 @@
 var navs = [{
     "title":"个人信息",
-    "icon":"fa-address-book",
+    "icon":"fa-user-circle",
     "spread":false,
     "href":"/schoolAdmin/personalInfo"
 },{
