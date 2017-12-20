@@ -450,7 +450,7 @@
                             type:1,
                             area:['400px','350px'],
                             content:$("#createChairman").html(),
-                            success:function (index) {
+                            success:function (layero,index) {
                                 form.on("submit(create)",function (data) {
                                     console.log(data);
                                     var newUser={
