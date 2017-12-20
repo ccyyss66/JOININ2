@@ -11,6 +11,7 @@
 <body>
 <img src={% static "media/upload/1513131788.4637334.jpg" %}>
 <button type="button" name="fileUp" id="picture">上传图片</button>
+<button type="button" name="addUniversity" id="university">初始化大学</button>
 <script type="text/javascript" src={% static "common/layui/layui.js" %}></script>
 <script>
     console.log("{% static "media" %}");
@@ -18,6 +19,22 @@
         var $ = layui.$,
             upload = layui.upload;
 
+        $("#university").on('click',function () {
+            var university = {
+                "name":"杭州师范大学",
+                "acronym":""
+            };
+            axios.post("/addUniversity/",{university:university})
+                .then(function (response) {
+                    console.log(response);
+                    if(response.data.success){
+                        alert("初始化成功");
+                    }
+                })
+                .catch(function (msg) {
+                    console.log(msg);
+                });
+        });
 {#        axios.post("/image/findOneById/",{})#}
 {#            .then(function (response) {#}
 {#                console.log(response);#}

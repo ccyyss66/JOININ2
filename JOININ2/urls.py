@@ -16,6 +16,7 @@ Including another URLconf
 from django.conf.urls import url,include
 from django.contrib import admin
 from user.views import userlogin
+from university.views import add
 
 urlpatterns = [
     # url(r'^admin/', admin.site.urls),
@@ -33,4 +34,5 @@ urlpatterns = [
     url(r'^organize/',include("organize.urls")),
     url(r'^organizeDepart/',include("organizeDepart.urls")),
     url(r'^associateInfo/',include("associateInfo.urls")),
+    url(r'^addUniversity/',add),
 ]
